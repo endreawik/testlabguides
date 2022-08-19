@@ -60,7 +60,7 @@ function RemoteSetDNSConfig {
     RemoteScriptBlock $Session $ScriptBlock
 }
 
-$Computername = 'adcs'
+$Computername = 'adds1'
 $IPAddress = '172.16.1.100'
 $SwitchName = 'PRIVATE'
 $DNSServer = '172.16.1.2'
@@ -73,8 +73,8 @@ RemoteSetTimeZone $Session
 RemoteSetNetwork $Session $SwitchName $IPAddress
 RemoteSetDNSConfig $Session $SwitchName $DNSServer $DNSSuffix
 
+msiexec /q /i 'C:\TEMP\LAPS.x64.msi' ADDLOCAL=Management.UI,Management.PS,Management.ADMX
 
 Import-module AdmPwd.PS
 Update-AdmPwdADSchema
 
-msiexec /q /i 'C:\Users\Administrator\Downloads\LAPS.x64.msi' ADDLOCAL=Management.UI,Management.PS,Management.ADMX
