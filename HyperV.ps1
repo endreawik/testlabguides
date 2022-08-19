@@ -16,7 +16,13 @@ Set-VMHost -VirtualHardDiskPath 'C:\VHD' -VirtualMachinePath 'C:\HYPERV'
 # Hyper-V - network
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 
-New-VMSwitch -Name 'PRIVATE' -SwitchType Private
+$VMSwitch = New-VMSwitch -SwitchName 'NAT' -SwitchType Internal
+
+$NATIPAddress = New-NetIPAddress -IPAddress 172.16.1.1 -PrefixLength 24 -InterfaceIndex (Get-NetAdapter | Where-Object { $_.Name -match 'NAT' }).ifIndex
+
+$NATNet = New-NetNat -Name NATnetwork -InternalIPInterfaceAddressPrefix 172.16.1.0/24
+
+# https://docs.microsoft.com/en-us/virtualization/hyper-v-on-windows/user-guide/setup-nat-network
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 # Hyper-V - Create VMs
@@ -26,7 +32,7 @@ $ISOPath = 'C:\ISO\en-us_windows_server_2022_x64_dvd_620d7eac.iso'
 $VHDPath = 'C:\VHD'
 
 function CreateVM ($VMName) {
-    $VM = New-VM -Name $VMName -Generation 2 -SwitchName (Get-VMSwitch -SwitchType Private).Name -NewVHDPath ($VHDPath + "\" + $VMName.ToLower() + "-c.vhdx") -NewVHDSizeBytes 100GB -BootDevice VHD
+    $VM = New-VM -Name $VMName -Generation 2 -SwitchName 'NAT' -NewVHDPath ($VHDPath + "\" + $VMName.ToLower() + "-c.vhdx") -NewVHDSizeBytes 100GB -BootDevice VHD
     Set-VM -Name $VM.Name -ProcessorCount 4 -DynamicMemory -MemoryMinimumBytes 1024MB -MemoryMaximumBytes 8192MB
     Add-VMDvdDrive -VMName $VM.Name -Path $ISOPath
     $HostGuardianService = Get-HgsGuardian -Name UntrustedGuardian
