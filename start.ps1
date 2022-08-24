@@ -38,7 +38,7 @@ function RemoteSetNetwork {
     $IPAddress = $IPAddress
     $ScriptBlock = { 
         $NetAdapter = Get-NetAdapter | Where-Object { $_.MacAddress -eq ($Using:MacAddress -replace '..(?!$)', '$&-') }; 
-        New-NetIPAddress -IPAddress $Using:IPAddress -AddressFamily IPv4 -PrefixLength 24 -InterfaceIndex ($NetAdapter.ifIndex)
+        New-NetIPAddress -IPAddress $Using:IPAddress -AddressFamily IPv4 -PrefixLength 24 -InterfaceIndex ($NetAdapter.ifIndex) -DefaultGateway $Using:Gateway
         
     }
     RemoteScriptBlock $Session $ScriptBlock
@@ -55,16 +55,17 @@ function RemoteSetDNSConfig {
     $ScriptBlock = { 
         $NetAdapter = Get-NetAdapter | Where-Object { $_.MacAddress -eq ($Using:MacAddress -replace '..(?!$)', '$&-') }; 
         Set-DnsClientServerAddress -ServerAddresses 172.16.1.2 -InterfaceIndex ($NetAdapter.ifIndex)
-        Set-DnsClient -ConnectionSpecificSuffix $Using:DNSSuffix -InterfaceIndex ($NetAdapter.ifIndex)
+        # Set-DnsClient -ConnectionSpecificSuffix $Using:DNSSuffix -InterfaceIndex ($NetAdapter.ifIndex)
     }
     RemoteScriptBlock $Session $ScriptBlock
 }
 
-$Computername = 'adds1'
-$IPAddress = '172.16.1.100'
-$SwitchName = 'PRIVATE'
+$Computername = 'adcs1'
+$IPAddress = '172.16.1.3'
+$SwitchName = 'NAT'
 $DNSServer = '172.16.1.2'
 $DNSSuffix = 'ad.endreawik.com'
+$Gateway = '172.16.1.1'
 
 $Session = New-PSSession -VMName $Computername -Credential (Get-Credential -Message 'Administrator' -UserName '~\Administrator')
 
