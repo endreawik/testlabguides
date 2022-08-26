@@ -79,3 +79,10 @@ msiexec /q /i 'C:\TEMP\LAPS.x64.msi' ADDLOCAL=Management.UI,Management.PS,Manage
 Import-module AdmPwd.PS
 Update-AdmPwdADSchema
 
+Add-Computer -DomainName ad.endreawik.com -Credential (Get-Credential -Message 'Administrator' -UserName '~\Administrator')
+
+Get-ChildItem -LiteralPath .\testlabguides\GroupPolicy -Recurse -File | ForEach-Object { Copy-VMFile -VMName ADDS1 -SourcePath $_.FullName -DestinationPath $_.FullName -CreateFullPath -FileSource Host }
+
+Import-GPO -Path 'C:\ENDREAWIK\testlabguides\GroupPolicy' -BackupId '2DD46DF8-70E8-4801-89AF-14E7C808BBF6' -TargetName 'EAW Windows Server - Domain Controller' -CreateIfNeeded
+Import-GPO -Path 'C:\ENDREAWIK\testlabguides\GroupPolicy' -BackupId '356BBC58-0677-47EA-9033-2DC3C12E7E04' -TargetName 'EAW Autoenrollment Policy' -CreateIfNeeded
+Import-GPO -Path 'C:\ENDREAWIK\testlabguides\GroupPolicy' -BackupId '74C66341-BF66-4E47-8D3D-9A6360CC3F07' -TargetName 'EAW Windows Server - Member Server' -CreateIfNeeded
