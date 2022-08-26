@@ -78,6 +78,7 @@ function CreateVM ($VMName) {
     $VM = New-VM -Name $VMName.ToUpper() -Generation 2 -SwitchName 'NAT' -NewVHDPath ($VHDPath + "\" + $VMName.ToLower() + "-c.vhdx") -NewVHDSizeBytes 100GB -BootDevice VHD
     Set-VM -Name $VM.Name -ProcessorCount 4 -DynamicMemory -MemoryMinimumBytes 1024MB -MemoryMaximumBytes 8192MB
     Add-VMDvdDrive -VMName $VM.Name -Path $ISOPath
+    Set-VMFirmware -VMName $VM.Name -FirstBootDevice (Get-VMDvdDrive -VMName $VM.Name)
     $HostGuardianService = Get-HgsGuardian -Name UntrustedGuardian
     $KeyProtector = New-HgsKeyProtector -Owner $HostGuardianService -AllowUntrustedRoot
     Set-VMKeyProtector -VMName $VM.Name -KeyProtector $KeyProtector.RawData

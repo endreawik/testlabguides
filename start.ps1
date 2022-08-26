@@ -54,25 +54,40 @@ function RemoteSetDNSConfig {
     $MacAddress = ($VMNetworkAdapter.MacAddress).ToString()
     $ScriptBlock = { 
         $NetAdapter = Get-NetAdapter | Where-Object { $_.MacAddress -eq ($Using:MacAddress -replace '..(?!$)', '$&-') }; 
-        Set-DnsClientServerAddress -ServerAddresses 172.16.1.2 -InterfaceIndex ($NetAdapter.ifIndex)
+        Set-DnsClientServerAddress -ServerAddresses $Using:DNSServer -InterfaceIndex ($NetAdapter.ifIndex)
         # Set-DnsClient -ConnectionSpecificSuffix $Using:DNSSuffix -InterfaceIndex ($NetAdapter.ifIndex)
     }
     RemoteScriptBlock $Session $ScriptBlock
 }
 
-$Computername = 'adcs1'
+$Computername = 'adds1'
 $IPAddress = '172.16.1.3'
-$SwitchName = 'NAT'
-$DNSServer = '172.16.1.2'
-$DNSSuffix = 'ad.endreawik.com'
 $Gateway = '172.16.1.1'
+$DNSServer = '172.16.1.2'
+
+$SwitchName = 'NAT'
+$DNSSuffix = 'ad.endreawik.com'
 
 $Session = New-PSSession -VMName $Computername -Credential (Get-Credential -Message 'Administrator' -UserName '~\Administrator')
-
 RemoteRenameComputer $Session $Computername
 RemoteSetTimeZone $Session
 RemoteSetNetwork $Session $SwitchName $IPAddress
 RemoteSetDNSConfig $Session $SwitchName $DNSServer $DNSSuffix
+
+$Computername = 'adcs1'
+$IPAddress = '172.16.1.3'
+$Gateway = '172.16.1.1'
+$DNSServer = '172.16.1.2'
+
+$SwitchName = 'NAT'
+$DNSSuffix = 'ad.endreawik.com'
+
+$Session = New-PSSession -VMName $Computername -Credential (Get-Credential -Message 'Administrator' -UserName '~\Administrator')
+RemoteRenameComputer $Session $Computername
+RemoteSetTimeZone $Session
+RemoteSetNetwork $Session $SwitchName $IPAddress
+RemoteSetDNSConfig $Session $SwitchName $DNSServer $DNSSuffix
+
 
 msiexec /q /i 'C:\TEMP\LAPS.x64.msi' ADDLOCAL=Management.UI,Management.PS,Management.ADMX
 

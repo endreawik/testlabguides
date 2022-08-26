@@ -37,7 +37,7 @@ Install-ADDSForest `
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 
 # S-DC-SubnetMissing
-New-ADReplicationSubnet -Name "172.16.0.0/12" -Site 'Default-First-Site-Name'
+New-ADReplicationSubnet -Name "172.16.1.0/24" -Site 'Default-First-Site-Name'
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 # Active Directory Domain Services - Users and Computers
@@ -97,6 +97,8 @@ Get-ADGroupMember -Identity 'Domain Admins' | Where-Object { $_.objectClass -eq 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 # Domain Name Services
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+
+w32tm /config /computer:adds1.ad.endreawik.com /manualpeerlist:time.windows.com /syncfromflags:manual /update
 
 # A-DnsZoneAUCreateChild
 $DNSServerZones = Get-DnsServerZone | Where-Object { $_.IsAutoCreated -eq $false } | Where-Object { $_.ZoneName -notmatch '_msdcs' -and $_.ZoneName -notmatch 'TrustAnchors' }
