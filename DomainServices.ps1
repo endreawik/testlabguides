@@ -95,10 +95,26 @@ Get-ADGroupMember -Identity 'Domain Admins' | Where-Object { $_.objectClass -eq 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-# Domain Name Services
+# Domain Name Services (DNS)
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 
 w32tm /config /computer:adds1.ad.endreawik.com /manualpeerlist:time.windows.com /syncfromflags:manual /update
 
 # A-DnsZoneAUCreateChild
 $DNSServerZones = Get-DnsServerZone | Where-Object { $_.IsAutoCreated -eq $false } | Where-Object { $_.ZoneName -notmatch '_msdcs' -and $_.ZoneName -notmatch 'TrustAnchors' }
+
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+# Active Directory Domain Services - Group Policy
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+
+Get-ChildItem -LiteralPath .\testlabguides\GroupPolicy -Recurse -File | ForEach-Object { Copy-VMFile -VMName ADDS1 -SourcePath $_.FullName -DestinationPath $_.FullName -CreateFullPath -FileSource Host }
+
+Import-GPO -Path 'C:\ENDREAWIK\testlabguides\GroupPolicy' -BackupId '2DD46DF8-70E8-4801-89AF-14E7C808BBF6' -TargetName 'EAW Windows Server - Domain Controller' -CreateIfNeeded
+Import-GPO -Path 'C:\ENDREAWIK\testlabguides\GroupPolicy' -BackupId '356BBC58-0677-47EA-9033-2DC3C12E7E04' -TargetName 'EAW Autoenrollment Policy' -CreateIfNeeded
+Import-GPO -Path 'C:\ENDREAWIK\testlabguides\GroupPolicy' -BackupId '74C66341-BF66-4E47-8D3D-9A6360CC3F07' -TargetName 'EAW Windows Server - Member Server' -CreateIfNeeded
+
+
+
+
+
+Add-KdsRootKey -EffectiveTime ((Get-Date).AddHours(-10))
