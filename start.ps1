@@ -27,6 +27,13 @@ function RemoteSetTimeZone {
     $ScriptBlock = { Set-TimeZone -Id 'W. Europe Standard Time' }
     RemoteScriptBlock $Session $ScriptBlock
 }
+function RemoteAddToDomain {
+    param (
+        $Session
+    )
+    $ScriptBlock = { Add-Computer -DomainName ad.endreawik.com -Credential (Get-Credential -Message 'Administrator' -UserName '~\Administrator') }
+    RemoteScriptBlock $Session $ScriptBlock
+}
 function RemoteSetNetwork {
     param (
         $Session,
@@ -88,16 +95,26 @@ RemoteSetTimeZone $Session
 RemoteSetNetwork $Session $SwitchName $IPAddress
 RemoteSetDNSConfig $Session $SwitchName $DNSServer $DNSSuffix
 
+# -----
+
+$Computername = 'adfs1'
+$IPAddress = '172.16.1.4'
+$Gateway = '172.16.1.1'
+$DNSServer = '172.16.1.2'
+
+$SwitchName = 'NAT'
+$DNSSuffix = 'ad.endreawik.com'
+
+$Session = New-PSSession -VMName $Computername -Credential (Get-Credential -Message 'Administrator' -UserName '~\Administrator')
+RemoteRenameComputer $Session $Computername
+RemoteSetTimeZone $Session
+RemoteSetNetwork $Session $SwitchName $IPAddress
+RemoteSetDNSConfig $Session $SwitchName $DNSServer $DNSSuffix
 
 msiexec /q /i 'C:\TEMP\LAPS.x64.msi' ADDLOCAL=Management.UI,Management.PS,Management.ADMX
 
 Import-module AdmPwd.PS
 Update-AdmPwdADSchema
 
-Add-Computer -DomainName ad.endreawik.com -Credential (Get-Credential -Message 'Administrator' -UserName '~\Administrator')
 
-Get-ChildItem -LiteralPath .\testlabguides\GroupPolicy -Recurse -File | ForEach-Object { Copy-VMFile -VMName ADDS1 -SourcePath $_.FullName -DestinationPath $_.FullName -CreateFullPath -FileSource Host }
-
-Import-GPO -Path 'C:\ENDREAWIK\testlabguides\GroupPolicy' -BackupId '2DD46DF8-70E8-4801-89AF-14E7C808BBF6' -TargetName 'EAW Windows Server - Domain Controller' -CreateIfNeeded
-Import-GPO -Path 'C:\ENDREAWIK\testlabguides\GroupPolicy' -BackupId '356BBC58-0677-47EA-9033-2DC3C12E7E04' -TargetName 'EAW Autoenrollment Policy' -CreateIfNeeded
-Import-GPO -Path 'C:\ENDREAWIK\testlabguides\GroupPolicy' -BackupId '74C66341-BF66-4E47-8D3D-9A6360CC3F07' -TargetName 'EAW Windows Server - Member Server' -CreateIfNeeded
+RemoteAddToDomain $Session
