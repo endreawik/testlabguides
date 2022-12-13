@@ -1,0 +1,26 @@
+<?xml version="1.0" ?>
+<infrastructure>
+    <networks>
+        <network name='datasenter'>
+        </network>
+    </networks>
+    <compute>
+        <servers>
+            <server name='adcs1'>
+                <network ip='' subnet='' gateway='' />
+            </server>
+            <server name='adds1'>
+                <network ip='' subnet='' gateway='' />
+            </server>
+            <server name='adds2'>
+                <network ip='' subnet='' gateway='' />
+            </server>
+            <server name='adfs1'>
+                <network ip='' subnet='' gateway='' />
+            </server>
+            <server name='admin1'>
+                <network ip='' subnet='' gateway='' />
+            </server>
+        </servers>
+    </compute>
+</infrastructure>

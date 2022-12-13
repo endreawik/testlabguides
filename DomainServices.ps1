@@ -12,25 +12,30 @@
 Get-Service -Name Spooler | Stop-Service
 Get-Service -Name Spooler | Set-Service -StartupType Disabled
 
+# Configure time
+w32tm /config /computer:adds1.ad.endreawik.com /manualpeerlist:time.windows.com /syncfromflags:manual /update
+
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 # Active Directory Domain Services - Role
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 
-Add-WindowsFeature AD-Domain-Services
+function AddRoleADDS () {
+  Add-WindowsFeature AD-Domain-Services -IncludeManagementTools
 
-Import-Module ADDSDeployment
-Install-ADDSForest `
--CreateDnsDelegation:$false `
--DatabasePath "C:\ADDS\NTDS" `
--DomainMode "WinThreshold" `
--DomainName "ad.endreawik.com" `
--DomainNetbiosName "AD" `
--ForestMode "WinThreshold" `
--InstallDns:$true `
--LogPath "C:\ADDS\NTDS" `
--NoRebootOnCompletion:$false `
--SysvolPath "C:\ADDS\SYSVOL" `
--Force:$true
+  Import-Module ADDSDeployment
+  Install-ADDSForest `
+  -CreateDnsDelegation:$false `
+  -DatabasePath "C:\ADDS\NTDS" `
+  -DomainMode "WinThreshold" `
+  -DomainName "ad.endreawik.com" `
+  -DomainNetbiosName "AD" `
+  -ForestMode "WinThreshold" `
+  -InstallDns:$true `
+  -LogPath "C:\ADDS\NTDS" `
+  -NoRebootOnCompletion:$false `
+  -SysvolPath "C:\ADDS\SYSVOL" `
+  -Force:$true
+}
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 # Active Directory Domain Services - Sites and Services
@@ -58,7 +63,7 @@ New-ADOrganizationalUnit -Name 'tier 2' -Description '' -Path (Get-ADDomain).Dis
   New-ADOrganizationalUnit -Name 'users' -Description '' -Path ('OU=tier 2,' + (Get-ADDomain).DistinguishedName)
 New-ADOrganizationalUnit -Name 'tier 3' -Description '' -Path (Get-ADDomain).DistinguishedName
   New-ADOrganizationalUnit -Name 'groups' -Description '' -Path ('OU=tier 3,' + (Get-ADDomain).DistinguishedName)
-  New-ADOrganizationalUnit -Name 'servers' -Description '' -Path ('OU=tier 3,' + (Get-ADDomain).DistinguishedName)
+  New-ADOrganizationalUnit -Name 'computers' -Description '' -Path ('OU=tier 3,' + (Get-ADDomain).DistinguishedName)
   New-ADOrganizationalUnit -Name 'users' -Description '' -Path ('OU=tier 3,' + (Get-ADDomain).DistinguishedName)
 
 # S-ADRegistration
@@ -97,8 +102,6 @@ Get-ADGroupMember -Identity 'Domain Admins' | Where-Object { $_.objectClass -eq 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 # Domain Name Services (DNS)
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-
-w32tm /config /computer:adds1.ad.endreawik.com /manualpeerlist:time.windows.com /syncfromflags:manual /update
 
 # A-DnsZoneAUCreateChild
 $DNSServerZones = Get-DnsServerZone | Where-Object { $_.IsAutoCreated -eq $false } | Where-Object { $_.ZoneName -notmatch '_msdcs' -and $_.ZoneName -notmatch 'TrustAnchors' }
