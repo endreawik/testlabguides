@@ -8,7 +8,7 @@
 # Hyper-V - Create VMs
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 
-$ISOPath = 'C:\ISO\en-us_windows_server_2022_updated_aug_2022_x64_dvd_8b65e57f.iso'
+$ISOPath = 'C:\ISO\en-us_windows_server_2022_x64_dvd_620d7eac.iso'
 $VHDPath = 'C:\VHD'
 $VMSwitch = Get-VMSwitch -SwitchType Internal -Name 'NAT'
 
@@ -48,3 +48,12 @@ $VMName = 'RAS1'
 CreateVM $VMName
 $VMName = 'WEB1'
 CreateVM $VMName
+$VMName = 'WEB2'
+CreateVM $VMName
+$VMName = 'CLIENT1'
+CreateVM $VMName
+$VMName = 'ADMIN1'
+CreateVM $VMName
+$VMName = 'DHCP1'
+CreateVM $VMName
+

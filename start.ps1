@@ -17,7 +17,7 @@ function RemoteRenameComputer {
         $Session,
         $Computername
     )
-    $ScriptBlock = { Rename-Computer -NewName $Using:Computername -Restart }
+    $ScriptBlock = { Rename-Computer -NewName $Using:Computername }
     RemoteScriptBlock $Session $ScriptBlock
 }
 function RemoteSetTimeZone {
@@ -67,54 +67,81 @@ function RemoteSetDNSConfig {
     RemoteScriptBlock $Session $ScriptBlock
 }
 
-$Computername = 'adds1'
-$IPAddress = '172.16.1.3'
-$Gateway = '172.16.1.1'
-$DNSServer = '172.16.1.2'
+function InstallAddsLaps () {
+    msiexec /q /i 'C:\ENDREAWIK\testlabguides\Download\LAPS.x64.msi' ADDLOCAL=Management.UI,Management.PS,Management.ADMX
 
-$SwitchName = 'NAT'
-$DNSSuffix = 'ad.endreawik.com'
+    Import-module AdmPwd.PS
+    Update-AdmPwdADSchema
+    
+}
 
-$Session = New-PSSession -VMName $Computername -Credential (Get-Credential -Message 'Administrator' -UserName '~\Administrator')
-RemoteRenameComputer $Session $Computername
-RemoteSetTimeZone $Session
-RemoteSetNetwork $Session $SwitchName $IPAddress
-RemoteSetDNSConfig $Session $SwitchName $DNSServer $DNSSuffix
 
-$Computername = 'adcs1'
-$IPAddress = '172.16.1.3'
-$Gateway = '172.16.1.1'
-$DNSServer = '172.16.1.2'
-
-$SwitchName = 'NAT'
-$DNSSuffix = 'ad.endreawik.com'
-
-$Session = New-PSSession -VMName $Computername -Credential (Get-Credential -Message 'Administrator' -UserName '~\Administrator')
-RemoteRenameComputer $Session $Computername
-RemoteSetTimeZone $Session
-RemoteSetNetwork $Session $SwitchName $IPAddress
-RemoteSetDNSConfig $Session $SwitchName $DNSServer $DNSSuffix
 
 # -----
 
-$Computername = 'adfs1'
-$IPAddress = '172.16.1.4'
-$Gateway = '172.16.1.1'
-$DNSServer = '172.16.1.2'
 
-$SwitchName = 'NAT'
-$DNSSuffix = 'ad.endreawik.com'
+function adds1 () {
+    $Computername = 'adds1'
+    $IPAddress = '172.16.1.3'
+    $Gateway = '172.16.1.1'
+    $DNSServer = '8.8.8.8'
+    
+    $SwitchName = 'NAT'
+    $DNSSuffix = 'ad.endreawik.com'    
+}
+function adcs1 () {
+    $Computername = 'adcs1'
+    $IPAddress = '172.16.1.3'
+    $Gateway = '172.16.1.1'
+    $DNSServer = '172.16.1.2'
+    
+    $SwitchName = 'NAT'
+    $DNSSuffix = 'ad.endreawik.com'    
+}
+
+function adfs1 () {
+    $Computername = 'adfs1'
+    $IPAddress = '172.16.1.4'
+    $Gateway = '172.16.1.1'
+    $DNSServer = '172.16.1.2'
+    
+    $SwitchName = 'NAT'
+    $DNSSuffix = 'ad.endreawik.com'
+}
+
+function web1 () {
+    $Computername = 'web1'
+    $IPAddress = '172.16.1.5'
+    $Gateway = '172.16.1.1'
+    $DNSServer = '8.8.8.8'
+
+    $SwitchName = 'NAT'
+    $DNSSuffix = 'ad.endreawik.com'
+}
+
+function admin1 () {
+    $Computername = 'admin1'
+    $IPAddress = '172.16.1.6'
+    $Gateway = '172.16.1.1'
+    $DNSServer = '172.16.1.2'
+
+    $SwitchName = 'NAT'
+    $DNSSuffix = 'ad.endreawik.com'
+}
+
+function dhcp1 () {
+    $Computername = 'dhcp1'
+    $IPAddress = '172.16.1.7'
+    $Gateway = '172.16.1.1'
+    $DNSServer = '172.16.1.2'
+
+    $SwitchName = 'NAT'
+    $DNSSuffix = 'ad.endreawik.com'
+}
 
 $Session = New-PSSession -VMName $Computername -Credential (Get-Credential -Message 'Administrator' -UserName '~\Administrator')
-RemoteRenameComputer $Session $Computername
 RemoteSetTimeZone $Session
 RemoteSetNetwork $Session $SwitchName $IPAddress
 RemoteSetDNSConfig $Session $SwitchName $DNSServer $DNSSuffix
-
-msiexec /q /i 'C:\TEMP\LAPS.x64.msi' ADDLOCAL=Management.UI,Management.PS,Management.ADMX
-
-Import-module AdmPwd.PS
-Update-AdmPwdADSchema
-
-
+RemoteRenameComputer $Session $Computername
 RemoteAddToDomain $Session
