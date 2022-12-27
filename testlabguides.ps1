@@ -13,7 +13,15 @@ $xmlserver = $xmlservers | Where-Object { $_.Name -eq 'adds1' }
 
 # Create VMs
 
+CreateVM $VMName
 
 # Configure Operating System
+
+$Session = New-PSSession -VMName $Computername -Credential (Get-Credential -Message 'Administrator' -UserName '~\Administrator')
+RemoteSetTimeZone $Session
+RemoteSetNetwork $Session $SwitchName $IPAddress
+RemoteSetDNSConfig $Session $SwitchName $DNSServer $DNSSuffix
+RemoteRenameComputer $Session $Computername
+RemoteAddToDomain $Session
 
 # Configure Roles and Features

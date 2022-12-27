@@ -52,6 +52,8 @@ $VMName = 'WEB2'
 CreateVM $VMName
 $VMName = 'CLIENT1'
 CreateVM $VMName
+$VMName = 'CLIENT2'
+CreateVM $VMName
 $VMName = 'ADMIN1'
 CreateVM $VMName
 $VMName = 'DHCP1'

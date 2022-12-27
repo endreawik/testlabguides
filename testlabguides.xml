@@ -7,19 +7,19 @@
     <compute>
         <servers>
             <server name='adcs1'>
-                <network ip='' subnet='' gateway='' />
+                <network switch='' ip='' subnet='' gateway='' />
             </server>
             <server name='adds1'>
-                <network ip='' subnet='' gateway='' />
+                <network switch='' ip='' subnet='' gateway='' />
             </server>
             <server name='adds2'>
-                <network ip='' subnet='' gateway='' />
+                <network switch='' ip='' subnet='' gateway='' />
             </server>
             <server name='adfs1'>
-                <network ip='' subnet='' gateway='' />
+                <network switch='' ip='' subnet='' gateway='' />
             </server>
             <server name='admin1'>
-                <network ip='' subnet='' gateway='' />
+                <network switch='' ip='' subnet='' gateway='' />
             </server>
         </servers>
     </compute>
