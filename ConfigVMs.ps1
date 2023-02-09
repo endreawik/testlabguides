@@ -75,6 +75,11 @@ function InstallAddsLaps () {
     
 }
 
+function RemoteRestartComputer () {
+    $ScriptBlock = { Restart-Computer -Force }
+    RemoteScriptBlock $Session $ScriptBlock
+}
+
 
 
 # -----
@@ -85,6 +90,15 @@ function adds1 () {
     $IPAddress = '172.16.1.3'
     $Gateway = '172.16.1.1'
     $DNSServer = '8.8.8.8'
+    
+    $SwitchName = 'NAT'
+    $DNSSuffix = 'ad.endreawik.com'    
+}
+function adds1 () {
+    $Computername = 'adds2'
+    $IPAddress = '172.16.1.9'
+    $Gateway = '172.16.1.1'
+    $DNSServer = '172.16.1.2'
     
     $SwitchName = 'NAT'
     $DNSSuffix = 'ad.endreawik.com'    
@@ -132,6 +146,15 @@ function admin1 () {
 function dhcp1 () {
     $Computername = 'dhcp1'
     $IPAddress = '172.16.1.7'
+    $Gateway = '172.16.1.1'
+    $DNSServer = '172.16.1.2'
+
+    $SwitchName = 'NAT'
+    $DNSSuffix = 'ad.endreawik.com'
+}
+function sql1 () {
+    $Computername = 'sql1'
+    $IPAddress = '172.16.1.8'
     $Gateway = '172.16.1.1'
     $DNSServer = '172.16.1.2'
 

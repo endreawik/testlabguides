@@ -22,6 +22,10 @@ RemoteSetTimeZone $Session
 RemoteSetNetwork $Session $SwitchName $IPAddress
 RemoteSetDNSConfig $Session $SwitchName $DNSServer $DNSSuffix
 RemoteRenameComputer $Session $Computername
+RemoteRestartComputer $Session
+$Session = New-PSSession -VMName $Computername -Credential (Get-Credential -Message 'Administrator' -UserName '~\Administrator')
 RemoteAddToDomain $Session
+RemoteRestartComputer $Session
+$Session = New-PSSession -VMName $Computername -Credential (Get-Credential -Message 'Administrator' -UserName '~\Administrator')
 
 # Configure Roles and Features
