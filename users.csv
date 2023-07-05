@@ -1,51 +1,9 @@
 ﻿sAMAccountName;userPrincipalName;displayName;name;givenName;sn;company;department;title;c;l;postalCode;streetAddress
-akand;akand@proofofconcept.no;Andreassen, Aksel;Aksel Andreassen;Aksel;Andreassen;Proof of Concept;Økonomi;;NO;Stavanger;4002;Øvre Holmegate
-aksol;aksol@proofofconcept.no;Solheim, Aksel;Aksel Solheim;Aksel;Solheim;Proof of Concept;Utvikling;;NO;Oslo;1205;Karl Johans gate
-elhal;elhal@proofofconcept.no;Halvorsen, Ella;Ella Halvorsen;Ella;Halvorsen;Proof of Concept;Marked;;NO;Trondheim;3005;Munkegata
-ellar;ellar@proofofconcept.no;Larsen, Ella;Ella Larsen;Ella;Larsen;Proof of Concept;Drift;;NO;Trondheim;3005;Munkegata
-elngu;elngu@proofofconcept.no;Nguyen, Ella;Ella Nguyen;Ella;Nguyen;Proof of Concept;Drift;;NO;Stavanger;4002;Øvre Holmegate
-embak;embak@proofofconcept.no;Bakken, Emma;Emma Bakken;Emma;Bakken;Proof of Concept;Marked;;NO;Oslo;1205;Karl Johans gate
-emeid;emeid@proofofconcept.no;Eide, Emil;Emil Eide;Emil;Eide;Proof of Concept;Marked;;NO;Oslo;1205;Karl Johans gate
-emeri;emeri@proofofconcept.no;Eriksen, Emil;Emil Eriksen;Emil;Eriksen;Proof of Concept;Marked;;NO;Oslo;1205;Karl Johans gate
-emjoh;emjoh@proofofconcept.no;Johansen, Emma;Emma Johansen;Emma;Johansen;Proof of Concept;Drift;;NO;Bergen;5003;Bryggen
-emlun;emlun@proofofconcept.no;Lund, Emma;Emma Lund;Emma;Lund;Proof of Concept;Drift;;NO;Bergen;5003;Bryggen
-fijac;fijac@proofofconcept.no;Jacobsen, Filip;Filip Jacobsen;Filip;Jacobsen;Proof of Concept;Drift;;NO;Bergen;5003;Bryggen
-firas;firas@proofofconcept.no;Rasmussen, Filip;Filip Rasmussen;Filip;Rasmussen;Proof of Concept;Utvikling;;NO;Trondheim;3005;Munkegata
-frmoe;frmoe@proofofconcept.no;Moen, Frida;Frida Moen;Frida;Moen;Proof of Concept;Drift;;NO;Stavanger;4002;Øvre Holmegate
-frnil;frnil@proofofconcept.no;Nilsen, Frida;Frida Nilsen;Frida;Nilsen;Proof of Concept;Utvikling;;NO;Stavanger;4002;Øvre Holmegate
-ibgun;ibgun@proofofconcept.no;Gundersen, Iben;Iben Gundersen;Iben;Gundersen;Proof of Concept;Marked;;NO;Trondheim;3005;Munkegata
-ibkri;ibkri@proofofconcept.no;Kristiansen, Iben;Iben Kristiansen;Iben;Kristiansen;Proof of Concept;Drift;;NO;Trondheim;3005;Munkegata
-isali;isali@proofofconcept.no;Ali, Isak;Isak Ali;Isak;Ali;Proof of Concept;Personal;;NO;Bergen;5003;Bryggen
-ishag;ishag@proofofconcept.no;Hagen, Isak;Isak Hagen;Isak;Hagen;Proof of Concept;Marked;;NO;Trondheim;3005;Munkegata
-jajoh;jajoh@proofofconcept.no;Johnsen, Jakob;Jakob Johnsen;Jakob;Johnsen;Proof of Concept;Drift;;NO;Stavanger;4002;Øvre Holmegate
-jasol;jasol@proofofconcept.no;Solberg, Jakob;Jakob Solberg;Jakob;Solberg;Proof of Concept;Utvikling;;NO;Stavanger;4002;Øvre Holmegate
-lemat;lemat@proofofconcept.no;Mathisen, Lea;Lea Mathisen;Lea;Mathisen;Proof of Concept;Drift;;NO;Oslo;1205;Karl Johans gate
-leped;leped@proofofconcept.no;Pedersen, Lea;Lea Pedersen;Lea;Pedersen;Proof of Concept;Utvikling;;NO;Bergen;5003;Bryggen
-lesor;lesor@proofofconcept.no;Sørensen, Lea;Lea Sørensen;Lea;Sørensen;Proof of Concept;Utvikling;;NO;Bergen;5003;Bryggen
-luber;luber@proofofconcept.no;Berg, Lukas;Lukas Berg;Lukas;Berg;Proof of Concept;Marked;;NO;Bergen;5003;Bryggen
-lumar;lumar@proofofconcept.no;Martinsen, Lukas;Lukas Martinsen;Lukas;Martinsen;Proof of Concept;Drift;;NO;Bergen;5003;Bryggen
-lunyg;lunyg@proofofconcept.no;Nygård, Lukas;Lukas Nygård;Lukas;Nygård;Proof of Concept;Utvikling;;NO;Oslo;1205;Karl Johans gate
-nohan;nohan@proofofconcept.no;Hansen, Nora;Nora Hansen;Nora;Hansen;Proof of Concept;Marked;;NO;Oslo;1205;Karl Johans gate
-nojor;nojor@proofofconcept.no;Jørgensen, Nora;Nora Jørgensen;Nora;Jørgensen;Proof of Concept;Drift;;NO;Oslo;1205;Karl Johans gate
-nolun;nolun@proofofconcept.no;Lunde, Noah;Noah Lunde;Noah;Lunde;Proof of Concept;Drift;;NO;Stavanger;4002;Øvre Holmegate
-nopau;nopau@proofofconcept.no;Paulsen, Nora;Nora Paulsen;Nora;Paulsen;Proof of Concept;Utvikling;;NO;Trondheim;3005;Munkegata
-nopet;nopet@proofofconcept.no;Pettersen, Noah;Noah Pettersen;Noah;Pettersen;Proof of Concept;Utvikling;;NO;Trondheim;3005;Munkegata
-nosve;nosve@proofofconcept.no;Svendsen, Noah;Noah Svendsen;Noah;Svendsen;Proof of Concept;Utvikling;;NO;Trondheim;3005;Munkegata
-olbak;olbak@proofofconcept.no;Bakke, Olivia;Olivia Bakke;Olivia;Bakke;Proof of Concept;Marked;;NO;Trondheim;3005;Munkegata
-olhau;olhau@proofofconcept.no;Haugen, Oliver;Oliver Haugen;Oliver;Haugen;Proof of Concept;Drift;;NO;Stavanger;4002;Øvre Holmegate
-olhen;olhen@proofofconcept.no;Henriksen, Olivia;Olivia Henriksen;Olivia;Henriksen;Proof of Concept;Drift;;NO;Stavanger;4002;Øvre Holmegate
-olknu;olknu@proofofconcept.no;Knutsen, Oliver;Oliver Knutsen;Oliver;Knutsen;Proof of Concept;Drift;;NO;Stavanger;4002;Øvre Holmegate
-olkri;olkri@proofofconcept.no;Kristoffersen, Olivia;Olivia Kristoffersen;Olivia;Kristoffersen;Proof of Concept;Drift;;NO;Bergen;5003;Bryggen
-olmoe;olmoe@proofofconcept.no;Moe, Oliver;Oliver Moe;Oliver;Moe;Proof of Concept;Drift;;NO;Bergen;5003;Bryggen
-olols;olols@proofofconcept.no;Olsen, Olivia;Olivia Olsen;Olivia;Olsen;Proof of Concept;Utvikling;;NO;Stavanger;4002;Øvre Holmegate
-saive;saive@proofofconcept.no;Iversen, Sara;Sara Iversen;Sara;Iversen;Proof of Concept;Drift;;NO;Bergen;5003;Bryggen
-sakar;sakar@proofofconcept.no;Karlsen, Sara;Sara Karlsen;Sara;Karlsen;Proof of Concept;Drift;;NO;Bergen;5003;Bryggen
-soand;soand@proofofconcept.no;Andersen, Sofie;Sofie Andersen;Sofie;Andersen;Proof of Concept;Økonomi;;NO;Oslo;1205;Karl Johans gate
-sojak;sojak@proofofconcept.no;Jakobsen, Sofie;Sofie Jakobsen;Sofie;Jakobsen;Proof of Concept;Drift;;NO;Oslo;1205;Karl Johans gate
-sojen;sojen@proofofconcept.no;Jensen, Sofia;Sofia Jensen;Sofia;Jensen;Proof of Concept;Drift;;NO;Oslo;1205;Karl Johans gate
-solie;solie@proofofconcept.no;Lie, Sofie;Sofie Lie;Sofie;Lie;Proof of Concept;Drift;;NO;Trondheim;3005;Munkegata
-sostr;sostr@proofofconcept.no;Strand, Sofia;Sofia Strand;Sofia;Strand;Proof of Concept;Utvikling;;NO;Oslo;1205;Karl Johans gate
-teber;teber@proofofconcept.no;Berge, Teodor;Teodor Berge;Teodor;Berge;Proof of Concept;Marked;;NO;Bergen;5003;Bryggen
-tedah;tedah@proofofconcept.no;Dahl, Teodor;Teodor Dahl;Teodor;Dahl;Proof of Concept;Marked;;NO;Trondheim;3005;Munkegata
-wiamu;wiamu@proofofconcept.no;Amundsen, William;William Amundsen;William;Amundsen;Proof of Concept;Personal;;NO;Stavanger;4002;Øvre Holmegate
-wijoh;wijoh@proofofconcept.no;Johannessen, William;William Johannessen;William;Johannessen;Proof of Concept;Drift;;NO;Oslo;1205;Karl Johans gate
+isgle;isgle@proofofconcept.no;Glesnes, Isak;Isak Glesnes;Isak;Glesnes;Proof of Concept;Personal;;NO;Bergen;5003;Bryggen
+wigle;wigle@proofofconcept.no;Glesnes, William;William Glesnes;William;Glesnes;Proof of Concept;Personal;;NO;Stavanger;4002;Øvre Holmegate
+sogle;sogle@proofofconcept.no;Glesnes, Sofie;Sofie Glesnes;Sofie;Glesnes;Proof of Concept;Økonomi;;NO;Oslo;1205;Karl Johans gate
+akgle;akgle@proofofconcept.no;Glesnes, Aksel;Aksel Glesnes;Aksel;Glesnes;Proof of Concept;Økonomi;;NO;Stavanger;4002;Øvre Holmegate
+olhav;olhav@proofofconcept.no;Havnen, Olivia;Olivia Havnen;Olivia;Havnen;Proof of Concept;Marked;;NO;Trondheim;3005;Munkegata
+emhav;emhav@proofofconcept.no;Havnen, Emma;Emma Havnen;Emma;Havnen;Proof of Concept;Marked;;NO;Oslo;1205;Karl Johans gate
+luhav;luhav@proofofconcept.no;Havnen, Lukas;Lukas Havnen;Lukas;Havnen;Proof of Concept;Marked;;NO;Bergen;5003;Bryggen
+tehav;tehav@proofofconcept.no;Havnen, Teodor;Teodor Havnen;Teodor;Havnen;Proof of Concept;Marked;;NO;Bergen;5003;Bryggen
