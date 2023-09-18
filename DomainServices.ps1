@@ -4,6 +4,9 @@
 
 
 
+Enter-PSSession -VMName ADDS1
+Enter-PSSession -VMName ADDS2
+
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 # Operating System
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
@@ -43,20 +46,22 @@ function AddRoleADDS () {
 #
 
 function AddRoleADDS2 () {
-Import-Module ADDSDeployment
-Install-ADDSDomainController `
--NoGlobalCatalog:$false `
--CreateDnsDelegation:$false `
--Credential (Get-Credential) `
--CriticalReplicationOnly:$false `
--DatabasePath "C:\ADDS\NTDS" `
--DomainName "ad.endreawik.com" `
--InstallDns:$true `
--LogPath "C:\ADDS\NTDS" `
--NoRebootOnCompletion:$false `
--SiteName "Default-First-Site-Name" `
--SysvolPath "C:\ADDS\SYSVOL" `
--Force:$true
+  Add-WindowsFeature AD-Domain-Services -IncludeManagementTools
+  
+  Import-Module ADDSDeployment
+  Install-ADDSDomainController `
+  -NoGlobalCatalog:$false `
+  -CreateDnsDelegation:$false `
+  -Credential (Get-Credential) `
+  -CriticalReplicationOnly:$false `
+  -DatabasePath "C:\ADDS\NTDS" `
+  -DomainName "ad.endreawik.com" `
+  -InstallDns:$true `
+  -LogPath "C:\ADDS\NTDS" `
+  -NoRebootOnCompletion:$false `
+  -SiteName "Default-First-Site-Name" `
+  -SysvolPath "C:\ADDS\SYSVOL" `
+  -Force:$true
 }
 
 
@@ -96,7 +101,7 @@ Set-ADDomain -Identity (Get-ADDomain).DistinguishedName -Replace @{'ms-DS-Machin
 $ProtectedUsers = @()
 $ProtectedUsers += Get-ADGroupMember -Identity 'Protected Users'
 $ProtectedUsers += Get-ADGroupMember -Identity 'Domain Admins'
-$ProtectedUsers | Set-ADUser -AccountNotDelegated $true -WhatIf
+$ProtectedUsers | Set-ADUser -AccountNotDelegated $true
 
 # P-RecycleBin
 Enable-ADOptionalFeature -Identity 'Recycle Bin Feature' -Scope ForestOrConfigurationSet -Target (Get-ADDomain).Forest -Confirm:$false

@@ -11,7 +11,7 @@
 if (Get-WindowsOptionalFeature -Online | Where-Object { $_.State -eq 'Enabled' -and $_.FeatureName -eq 'Microsoft-Hyper-V' }) {
     Write-Host 'Skipping: Hyper-V installed' -ForegroundColor Yellow
 } else {
-    Enable-WindowsOptionalFeature -Online -FeatureName 'Microsoft-Hyper-V' -All
+    Enable-WindowsOptionalFeature -Online -FeatureName 'Microsoft-Hyper-V' -IncludeManagementTools
 }
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #

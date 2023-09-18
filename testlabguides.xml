@@ -1,26 +1,45 @@
 <?xml version="1.0" ?>
 <infrastructure>
     <networks>
-        <network name='datasenter'>
+        <network name='external'>
+        </network>
+        <network name='nat'>
         </network>
     </networks>
-    <compute>
-        <servers>
-            <server name='adcs1'>
-                <network switch='' ip='' subnet='' gateway='' />
-            </server>
-            <server name='adds1'>
-                <network switch='' ip='' subnet='' gateway='' />
-            </server>
-            <server name='adds2'>
-                <network switch='' ip='' subnet='' gateway='' />
-            </server>
-            <server name='adfs1'>
-                <network switch='' ip='' subnet='' gateway='' />
-            </server>
-            <server name='admin1'>
-                <network switch='' ip='' subnet='' gateway='' />
-            </server>
-        </servers>
-    </compute>
+    <domain name='ad.endreawik.com' netbios='ad'/>
+    <servers>
+        <server name='adcs1' type='domain' role='adcs'>
+            <network switch='nat' ip='172.16.1.4' subnet='255.255.255.0' gateway='172.16.1.1' />
+        </server>
+        <server name='adds1' type='standalone' role='adds'>
+            <network switch='nat' ip='172.16.1.2' subnet='255.255.255.0' gateway='172.16.1.1' />
+        </server>
+        <server name='adds2' type='domain'>
+            <network switch='nat' ip='172.16.1.5' subnet='255.255.255.0' gateway='172.16.1.1' />
+        </server>
+        <server name='adfs1' type='domain'>
+            <network switch='nat' ip='172.16.1.6' subnet='255.255.255.0' gateway='172.16.1.1' />
+        </server>
+        <server name='adfs2' type='standalone'>
+            <network switch='nat' ip='172.16.1.7' subnet='255.255.255.0' gateway='172.16.1.1' />
+        </server>
+        <server name='azad1' type='domain'>
+            <network switch='nat' ip='172.16.1.8' subnet='255.255.255.0' gateway='172.16.1.1' />
+        </server>
+        <server name='exch1' type='domain'>
+            <network switch='nat' ip='172.16.1.3' subnet='255.255.255.0' gateway='172.16.1.1' />
+        </server>
+        <server name='root1' type='standalone' role='root'>
+            <network switch='nat' ip='172.16.1.9' subnet='255.255.255.0' gateway='172.16.1.1' />
+        </server>
+        <server name='aweb1' type='domain' role='iis'>
+            <network switch='nat' ip='172.16.1.10' subnet='255.255.255.0' gateway='172.16.1.1' />
+        </server>
+        <server name='aweb2' type='domain' role='iis'>
+            <network switch='nat' ip='172.16.1.11' subnet='255.255.255.0' gateway='172.16.1.1' />
+        </server>
+        <server name='admt1' type='domain'>
+            <network switch='nat' ip='172.16.1.12' subnet='255.255.255.0' gateway='172.16.1.1' />
+        </server>
+    </servers>
 </infrastructure>

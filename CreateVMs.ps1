@@ -8,7 +8,7 @@
 # Hyper-V - Create VMs
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 
-$ISOPath = 'C:\ISO\en-us_windows_server_2022_x64_dvd_620d7eac.iso'
+$ISOPath = 'C:\ISO\en-us_windows_server_2022_updated_feb_2023_x64_dvd_76afefb5.iso'
 $VHDPath = 'C:\VHD'
 $VMSwitch = Get-VMSwitch -SwitchType Internal -Name 'NAT'
 
@@ -20,7 +20,8 @@ if (Test-Path -Path $ISOPath) {
 }
 
 function CreateVM ($VMName) {
-    if (Get-VM -Name $VMName) {
+    $VM = Get-VM -Name $VMName -ErrorAction SilentlyContinue
+    if ($VM) {
         Write-Host 'Skipping: ' -ForegroundColor Yellow -NoNewline
         Write-Host $VMName -ForegroundColor Yellow -NoNewline
         Write-Host ' exists' -ForegroundColor Yellow
@@ -36,15 +37,21 @@ function CreateVM ($VMName) {
     }
 }
 
+$VMName = 'ROOT1'
+CreateVM $VMName
 $VMName = 'ADCS1'
 CreateVM $VMName
 $VMName = 'ADDS1'
+CreateVM $VMName
+$VMName = 'ADDS2'
 CreateVM $VMName
 $VMName = 'ADFS1'
 CreateVM $VMName
 $VMName = 'ADFS2'
 CreateVM $VMName
 $VMName = 'RAS1'
+CreateVM $VMName
+$VMName = 'AZAD1'
 CreateVM $VMName
 $VMName = 'WEB1'
 CreateVM $VMName
@@ -58,4 +65,19 @@ $VMName = 'ADMIN1'
 CreateVM $VMName
 $VMName = 'DHCP1'
 CreateVM $VMName
+$VMName = 'NPS1'
+CreateVM $VMName
+$VMName = 'NPS2'
+CreateVM $VMName
 
+$VMName = 'EXCH1'
+CreateVM $VMName
+
+$VMName = 'AWEB1'
+CreateVM $VMName
+$VMName = 'AWEB2'
+CreateVM $VMName
+
+
+$VMName = 'ADMT1'
+CreateVM $VMName

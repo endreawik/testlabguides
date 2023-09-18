@@ -17,21 +17,35 @@ function RemoteRenameComputer {
         $Session,
         $Computername
     )
-    $ScriptBlock = { Rename-Computer -NewName $Using:Computername }
-    RemoteScriptBlock $Session $ScriptBlock
+    $ScriptBlock = { 
+        if ($env:COMPUTERNAME -eq $Using:Computername) {
+            return $false
+        } else {
+            Rename-Computer -NewName $Using:Computername -WarningVariable $Warn
+            return $true
+        }
+    }
+    $RestartRequired = RemoteScriptBlock $Session $ScriptBlock
+    return $RestartRequired
 }
 function RemoteSetTimeZone {
     param (
         $Session
     )
-    $ScriptBlock = { Set-TimeZone -Id 'W. Europe Standard Time' }
+    $ScriptBlock = { 
+        if ((Get-TimeZone).Id -eq 'W. Europe Standard Time') {
+        } else {
+            Set-TimeZone -Id 'W. Europe Standard Time'
+        }
+    }
     RemoteScriptBlock $Session $ScriptBlock
 }
 function RemoteAddToDomain {
     param (
         $Session
     )
-    $ScriptBlock = { Add-Computer -DomainName ad.endreawik.com -Credential (Get-Credential -Message 'Administrator' -UserName '~\Administrator') }
+    $ScriptBlock = { 
+        Add-Computer -DomainName ad.endreawik.com -Credential (Get-Credential -Message 'Administrator' -UserName '~\Administrator') }
     RemoteScriptBlock $Session $ScriptBlock
 }
 function RemoteSetNetwork {
@@ -44,8 +58,11 @@ function RemoteSetNetwork {
     $MacAddress = ($VMNetworkAdapter.MacAddress).ToString()
     $IPAddress = $IPAddress
     $ScriptBlock = { 
-        $NetAdapter = Get-NetAdapter | Where-Object { $_.MacAddress -eq ($Using:MacAddress -replace '..(?!$)', '$&-') }; 
-        New-NetIPAddress -IPAddress $Using:IPAddress -AddressFamily IPv4 -PrefixLength 24 -InterfaceIndex ($NetAdapter.ifIndex) -DefaultGateway $Using:Gateway
+        $NetAdapter = Get-NetAdapter | Where-Object { $_.MacAddress -eq ($Using:MacAddress -replace '..(?!$)', '$&-') };
+        if ((Get-NetIPAddress -InterfaceIndex ($NetAdapter.ifIndex)).IPv4Address -eq $Using:IPAddress) {
+        } else {
+            $NetConfig = New-NetIPAddress -IPAddress $Using:IPAddress -AddressFamily IPv4 -PrefixLength 24 -InterfaceIndex ($NetAdapter.ifIndex) -DefaultGateway $Using:Gateway
+        }
         
     }
     RemoteScriptBlock $Session $ScriptBlock
@@ -61,7 +78,7 @@ function RemoteSetDNSConfig {
     $MacAddress = ($VMNetworkAdapter.MacAddress).ToString()
     $ScriptBlock = { 
         $NetAdapter = Get-NetAdapter | Where-Object { $_.MacAddress -eq ($Using:MacAddress -replace '..(?!$)', '$&-') }; 
-        Set-DnsClientServerAddress -ServerAddresses $Using:DNSServer -InterfaceIndex ($NetAdapter.ifIndex)
+        $DNSConfig = Set-DnsClientServerAddress -ServerAddresses $Using:DNSServer -InterfaceIndex ($NetAdapter.ifIndex)
         # Set-DnsClient -ConnectionSpecificSuffix $Using:DNSSuffix -InterfaceIndex ($NetAdapter.ifIndex)
     }
     RemoteScriptBlock $Session $ScriptBlock
@@ -85,9 +102,9 @@ function RemoteRestartComputer () {
 # -----
 
 
-function adds1 () {
-    $Computername = 'adds1'
-    $IPAddress = '172.16.1.3'
+function root1 () {
+    $Computername = 'root1'
+    $IPAddress = '172.16.1.2'
     $Gateway = '172.16.1.1'
     $DNSServer = '8.8.8.8'
     
@@ -95,19 +112,28 @@ function adds1 () {
     $DNSSuffix = 'ad.endreawik.com'    
 }
 function adds1 () {
-    $Computername = 'adds2'
-    $IPAddress = '172.16.1.9'
+    $Computername = 'adds1'
+    $IPAddress = '172.16.1.5'
     $Gateway = '172.16.1.1'
-    $DNSServer = '172.16.1.2'
+    $DNSServer = '8.8.8.8'
+    
+    $SwitchName = 'NAT'
+    $DNSSuffix = 'ad.endreawik.com'    
+}
+function adds2 () {
+    $Computername = 'adds2'
+    $IPAddress = '172.16.1.6'
+    $Gateway = '172.16.1.1'
+    $DNSServer = '172.16.1.5'
     
     $SwitchName = 'NAT'
     $DNSSuffix = 'ad.endreawik.com'    
 }
 function adcs1 () {
     $Computername = 'adcs1'
-    $IPAddress = '172.16.1.3'
+    $IPAddress = '172.16.1.7'
     $Gateway = '172.16.1.1'
-    $DNSServer = '172.16.1.2'
+    $DNSServer = '172.16.1.5'
     
     $SwitchName = 'NAT'
     $DNSSuffix = 'ad.endreawik.com'    
@@ -125,9 +151,18 @@ function adfs1 () {
 
 function web1 () {
     $Computername = 'web1'
-    $IPAddress = '172.16.1.5'
+    $IPAddress = '172.16.1.8'
     $Gateway = '172.16.1.1'
-    $DNSServer = '8.8.8.8'
+    $DNSServer = '172.16.1.5'
+
+    $SwitchName = 'NAT'
+    $DNSSuffix = 'ad.endreawik.com'
+}
+function web2 () {
+    $Computername = 'web2'
+    $IPAddress = '172.16.1.9'
+    $Gateway = '172.16.1.1'
+    $DNSServer = '172.16.1.5'
 
     $SwitchName = 'NAT'
     $DNSSuffix = 'ad.endreawik.com'
@@ -135,7 +170,7 @@ function web1 () {
 
 function admin1 () {
     $Computername = 'admin1'
-    $IPAddress = '172.16.1.6'
+    $IPAddress = '172.16.1.9'
     $Gateway = '172.16.1.1'
     $DNSServer = '172.16.1.2'
 
@@ -182,3 +217,40 @@ function client2 () {
     $DNSSuffix = 'ad.endreawik.com'
 }
 
+function azad1 () {
+    $Computername = 'azad1'
+    $IPAddress = '172.16.1.11'
+    $Gateway = '172.16.1.1'
+    $DNSServer = '172.16.1.5'
+    
+    $SwitchName = 'NAT'
+    $DNSSuffix = 'ad.endreawik.com'    
+}
+
+function nps1 () {
+    $Computername = 'nps1'
+    $IPAddress = '172.16.1.12'
+    $Gateway = '172.16.1.1'
+    $DNSServer = '172.16.1.5'
+    
+    $SwitchName = 'NAT'
+    $DNSSuffix = 'ad.endreawik.com'    
+}
+function eads2 () {
+    $Computername = 'nps1'
+    $IPAddress = '172.16.1.15'
+    $Gateway = '172.16.1.1'
+    $DNSServer = '172.16.1.5'
+    
+    $SwitchName = 'NAT'
+    $DNSSuffix = 'ad.endreawik.com'    
+}
+function exch1 () {
+    $Computername = 'exch1'
+    $IPAddress = '172.16.1.16'
+    $Gateway = '172.16.1.1'
+    $DNSServer = '172.16.1.5'
+    
+    $SwitchName = 'NAT'
+    $DNSSuffix = 'ad.endreawik.com'    
+}
