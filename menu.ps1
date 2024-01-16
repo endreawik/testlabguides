@@ -17,7 +17,7 @@ Write-Host "----- ----- ----- ----- ----- ----- ----- ----- ----- -----"
 Write-Host "                      Test Lab Guides                      "
 Write-Host "----- ----- ----- ----- ----- ----- ----- ----- ----- -----"
 Write-Host " "
-Read-Host -Prompt 'Press enter to continue'
+# Read-Host -Prompt 'Press enter to continue'
 
 $showmenu = $true
 
@@ -43,7 +43,7 @@ while ($showmenu) {
         0 {
             $showmenu = $false
         }
-        1 {
+        1 { # Create VMs
             Clear-Host
             Write-Host " ----- ----- ----- ----- -----"
             Write-Host "  Creating Virtual Machines   "
@@ -74,7 +74,7 @@ while ($showmenu) {
             }
             Read-Host -Prompt 'Press enter to continue'
         }
-        2 {
+        2 { # Configure VMs
             Clear-Host
             Write-Host " ----- ----- ----- ----- -----"
             Write-Host " Configuring Operating System "
@@ -116,7 +116,7 @@ while ($showmenu) {
             }
             Read-Host -Prompt 'Press enter to continue'
         }
-        3 {
+        3 { # ADDS
             $showsubmenuadds = $true
             while ($showsubmenuadds) {
                 Clear-Host
@@ -240,6 +240,7 @@ while ($showmenu) {
                     }
                     3 {
                         Clear-Host
+                        $ADCredentials = Get-Credential -Message 'AD Administrator' -UserName 'AD\Administrator'
                         foreach ($xmlserver in $xml.infrastructure.servers.server) {
                             $VMready = $VMsRunning | Where-Object { $_.Name -match ($xmlserver.name) }
                             if ($VMready) {
@@ -250,9 +251,10 @@ while ($showmenu) {
                                     $Computername = $xmlserver.name
                                     $VMNetworkAdapter = Get-VM -Name $xmlserver.name | Get-VMNetworkAdapter | Where-Object { $_.SwitchName -eq $SwitchName }
                                     $MacAddress = ($VMNetworkAdapter.MacAddress).ToString()
+                                    $xmlserveradds = $xml.infrastructure.servers.server | Where-Object { $_.role -eq 'adds' }
                                     Invoke-Command -VMName $xmlserver.name -ScriptBlock {
                                         if ($env:COMPUTERNAME -eq $Using:Computername) {
-                                            $xmlserveradds = $xml.infrastructure.servers.server | Where-Object { $_.role -eq 'adds' }
+                                            $xmlserveradds = $Using:xmlserveradds
                                             $NetAdapter = Get-NetAdapter | Where-Object { $_.MacAddress -eq ($Using:MacAddress -replace '..(?!$)', '$&-') };
                                             $DNSConfig = Set-DnsClientServerAddress -ServerAddresses $Using:xmlserveradds.network.ip -InterfaceIndex ($NetAdapter.ifIndex)
                                             Start-Sleep -Seconds 10
@@ -291,10 +293,14 @@ while ($showmenu) {
                         }
                         Read-Host -Prompt 'Press enter to continue'
                     }
+                    5 {
+                        Clear-Host
+                        $ADCredentials = Get-Credential -Message 'AD Administrator' -UserName 'AD\Administrator'
+                    }
                 }
             }
         }
-        4 {
+        4 { # ADCS
             $showsubmenuadcs = $true
             while ($showsubmenuadcs) {
                 Clear-Host
@@ -330,7 +336,7 @@ while ($showmenu) {
                         }
                         Read-Host -Prompt 'Press enter to continue'
                     }
-                    2 {
+                    2 { # ADCS root
                         $VMsRunning = Get-VM | Where-Object { $_.State -eq 'Running' }
 
                         foreach ($xmlserver in $xml.infrastructure.servers.server) {
@@ -351,7 +357,7 @@ while ($showmenu) {
                                         Restart-Service CertSvc
 
                                         Add-CACrlDistributionPoint -Uri 'C:\Windows\System32\CertSrv\CertEnroll\%3%8.crl' -PublishToServer -Force
-                                        Add-CACrlDistributionPoint -Uri 'http://pki.ad.endreawik.no/%3%8.crl' -AddToCertificateCdp -Force
+                                        Add-CACrlDistributionPoint -Uri 'http://pki.endreawik.no/%3%8.crl' -AddToCertificateCdp -Force
 
                                         Get-CAAuthorityInformationAccess | Where-Object { $_.Uri -like '*ldap*' -or $_.Uri -like '*http*' -or $_.Uri -like '*file*' } | Remove-CAAuthorityInformationAccess -Force
 
@@ -371,7 +377,7 @@ while ($showmenu) {
                         }
                         Read-Host -Prompt 'Press enter to continue'
                     }
-                    3 {
+                    3 { # ADCS distribute
                         $VMsRunning = Get-VM | Where-Object { $_.State -eq 'Running' }
 
                         foreach ($xmlserver in $xml.infrastructure.servers.server) {
@@ -379,18 +385,24 @@ while ($showmenu) {
                             if ($VMready) {
                                 $Certificate = 'Endre A Wik Root CA'
                                 if ($xmlserver.role -eq 'root') {
+                                    $Credentials = Get-Credential -Message "Local Administrator"
                                     $Session = New-PSSession -VMName $xmlserver.name -Credential $Credentials
                                     Copy-Item -Path "C:\Windows\System32\CertSrv\CertEnroll\$Certificate.crl" -Destination 'C:\TEMP' -FromSession $Session -Force
                                     Copy-Item -Path "C:\Windows\System32\CertSrv\CertEnroll\$Certificate.crt" -Destination 'C:\TEMP' -FromSession $Session -Force
+                                    Remove-PSSession -Session $Session
                                 }
                                 if ($xmlserver.role -eq 'iis') {
+                                    $Credentials = Get-Credential -Message "Local Administrator"
                                     $Session = New-PSSession -VMName $xmlserver.name -Credential $Credentials
                                     Copy-Item -Path "C:\TEMP\$Certificate.crl" -Destination 'C:\inetpub\wwwroot' -ToSession $Session -Force
                                     Copy-Item -Path "C:\TEMP\$Certificate.crt" -Destination 'C:\inetpub\wwwroot' -ToSession $Session -Force
+                                    Remove-PSSession -Session $Session
                                 }
                                 if ($xmlserver.role -eq 'adds') {
-                                    $Session = New-PSSession -VMName $xmlserver.name -Credential $Credentials
+                                    $ADCredentials = Get-Credential -Message "Domain Administrator"
+                                    $Session = New-PSSession -VMName $xmlserver.name -Credential $ADCredentials
                                     Copy-Item -Path "C:\TEMP\$Certificate.crt" -Destination 'C:\' -ToSession $Session -Force
+                                    Remove-PSSession -Session $Session
 
                                     Start-Sleep -Seconds 10
 
@@ -415,13 +427,26 @@ while ($showmenu) {
                             $VMready = $VMsRunning | Where-Object { $_.Name -match ($xmlserver.name) }
                             if ($VMready) {
                                 if ($xmlserver.role -eq 'adcs') {
-                                    $Session = New-PSSession -VMName $xmlserver.name -Credential $Credentials
+                                    $Session = New-PSSession -VMName $xmlserver.name -Credential $ADCredentials
                                     Copy-Item -Path '.\testlabguides\CAPolicy-ent.ini' -Destination 'C:\Windows\CAPolicy.ini' -ToSession $Session
-                                    Invoke-Command -VMName $xmlserver.name -ScriptBlock {
-                                        certutil.exe -dsPublish -f "C:\TEMP\Endre A Wik Root CA.crt" RootCA
 
+                                    Invoke-Command -VMName $xmlserver.name -ScriptBlock {
                                         Install-WindowsFeature -Name ADCS-Cert-Authority -IncludeManagementTools
-                                        Install-AdcsCertificationAuthority -CAType EnterpriseSubordinateCA -CACommonName 'Endre A Wik Enterprise CA' -KeyLength 384 -HashAlgorithmName SHA256 -CryptoProviderName 'ECDSA_P384#Microsoft Software Key Storage Provider' -ValidityPeriod Years -ValidityPeriodUnits 10 -Force
+                                        Install-AdcsCertificationAuthority -CAType EnterpriseSubordinateCA -CACommonName 'Endre A Wik Enterprise CA' -KeyLength 384 -HashAlgorithmName SHA256 -CryptoProviderName 'ECDSA_P384#Microsoft Software Key Storage Provider' -ValidityPeriod Years -ValidityPeriodUnits 10 -Force -OutputCertRequestFile 'C:\EnterpriseCA.req'
+                                    } -Credential $ADCredentials
+
+                                    Copy-Item -Path "C:\EnterpriseCA.req" -Destination 'C:\TEMP' -FromSession $Session -Force
+
+                                    $SessionROOT = New-PSSession -VMName 'ROOT1' -Credential $Credentials
+
+                                    Copy-Item -Path "C:\TEMP\EnterpriseCA.req" -Destination 'C:\' -ToSession $SessionROOT -Force
+
+                                    Invoke-Command -VMName $xmlserver.name -ScriptBlock {
+                                        <# 
+                                        certutil.exe -dsPublish -f "C:\TEMP\Endre A Wik Root CA.crt" RootCA
+                                        Install-WindowsFeature -Name ADCS-Cert-Authority -IncludeManagementTools
+                                        Install-AdcsCertificationAuthority -CAType EnterpriseSubordinateCA -CACommonName 'Endre A Wik Enterprise CA' -KeyLength 384 -HashAlgorithmName SHA256 -CryptoProviderName 'ECDSA_P384#Microsoft Software Key Storage Provider' -ValidityPeriod Years -ValidityPeriodUnits 10 -Force -OutputCertRequestFile 'C:\EnterpriseCA.req'
+                                        #>
 
                                         $CRLs = Get-CACrlDistributionPoint
                                         foreach ($CRL in $CRLs) {
@@ -431,13 +456,13 @@ while ($showmenu) {
                                         Restart-Service CertSvc
                                         
                                         Add-CACrlDistributionPoint -Uri 'C:\Windows\System32\CertSrv\CertEnroll\%3%8.crl' -PublishToServer -Force
-                                        Add-CACrlDistributionPoint -Uri 'http://pki.endreawik.com/%3%8.crl' -AddToCertificateCdp -Force
+                                        Add-CACrlDistributionPoint -Uri 'http://pki.endreawik.no/%3%8.crl' -AddToCertificateCdp -Force
                                         
                                         Get-CAAuthorityInformationAccess | Where-Object { $_.Uri -like '*ldap*' -or $_.Uri -like '*http*' -or $_.Uri -like '*file*' } | Remove-CAAuthorityInformationAccess -Force
                                         
                                         Restart-Service CertSvc
                                         
-                                    } -AsJob -Credential $Credentials
+                                    } -AsJob -Credential $ADCredentials
                                 }
                             } else {
                             }
@@ -499,6 +524,7 @@ while ($showmenu) {
 
             # install exchange part 1 using powershell remoting as job
             $Computername = 'exch1'
+            $VMName = $Computername
             Invoke-Command -VMName $VMName -ScriptBlock {
                 if ($env:COMPUTERNAME -eq $Using:Computername) {
                     Add-WindowsFeature RSAT-ADDS
@@ -538,3 +564,25 @@ while ($showmenu) {
         }
     }
 }
+
+
+
+$PersonalAccessToken = "dare5bmchzcr6wb2xpwl3hroc6wttow6zjldiiyaf4ueubpcm7ra"
+$PersonalAccessToken = "46ugsp535ayumxhau5b254gdxxkbwdhbhzqcwmpeeqbuckuizo7a"
+$Organization = "pcmannen"
+$CreateProjectsManager = @{Authorization = 'Basic ' + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$($PersonalAccessToken)")) }
+
+$RequestBody = @{
+    name = "Projectname"
+    description = "Project description"
+    capabilities = @{
+        versioncontrol = @{
+            sourceControlType = "Git"
+        }
+        processTemplate = @{
+            templateTypeId = "b8a3a935-7e91-48b8-a94c-606d37c3e9f2"
+        }
+    }
+}
+
+Invoke-RestMethod -Headers $CreateProjectsManager -Method Post -Uri "https://dev.azure.com/$($Organization)/_apis/projects?api-version=7.1-preview.4" -Body ($RequestBody | ConvertTo-Json -Depth 5) -ContentType "application/json"

@@ -17,12 +17,14 @@
         <server name='adds2' type='domain'>
             <network switch='nat' ip='172.16.1.5' subnet='255.255.255.0' gateway='172.16.1.1' />
         </server>
+        <!--
         <server name='adfs1' type='domain'>
             <network switch='nat' ip='172.16.1.6' subnet='255.255.255.0' gateway='172.16.1.1' />
         </server>
         <server name='adfs2' type='standalone'>
             <network switch='nat' ip='172.16.1.7' subnet='255.255.255.0' gateway='172.16.1.1' />
         </server>
+        -->
         <server name='azad1' type='domain'>
             <network switch='nat' ip='172.16.1.8' subnet='255.255.255.0' gateway='172.16.1.1' />
         </server>
@@ -38,8 +40,10 @@
         <server name='aweb2' type='domain' role='iis'>
             <network switch='nat' ip='172.16.1.11' subnet='255.255.255.0' gateway='172.16.1.1' />
         </server>
+        <!--
         <server name='admt1' type='domain'>
             <network switch='nat' ip='172.16.1.12' subnet='255.255.255.0' gateway='172.16.1.1' />
         </server>
+        -->
     </servers>
 </infrastructure>
