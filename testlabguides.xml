@@ -6,44 +6,70 @@
         <network name='nat'>
         </network>
     </networks>
-    <domain name='ad.endreawik.com' netbios='ad'/>
+    <organization name='Endre A Wik' />
+    <domain name='ad.endreawik.no' netbios='ad'/>
     <servers>
         <server name='adcs1' type='domain' role='adcs'>
+            <hardware RAMmin='1024' RAMmax='8192' />
+            <operatingsystem type='WindowsServerEval' />
             <network switch='nat' ip='172.16.1.4' subnet='255.255.255.0' gateway='172.16.1.1' />
         </server>
         <server name='adds1' type='standalone' role='adds'>
+            <hardware RAMmin='1024' RAMmax='8192' />
+            <operatingsystem type='WindowsServerEval' />
             <network switch='nat' ip='172.16.1.2' subnet='255.255.255.0' gateway='172.16.1.1' />
         </server>
         <server name='adds2' type='domain'>
+            <hardware RAMmin='1024' RAMmax='8192' />
+            <operatingsystem type='WindowsServerEval' />
             <network switch='nat' ip='172.16.1.5' subnet='255.255.255.0' gateway='172.16.1.1' />
         </server>
         <!--
         <server name='adfs1' type='domain'>
+            <hardware RAMmin='1024' RAMmax='8192' />
+            <operatingsystem type='WindowsServerEval' />
             <network switch='nat' ip='172.16.1.6' subnet='255.255.255.0' gateway='172.16.1.1' />
         </server>
-        <server name='adfs2' type='standalone'>
+        <server name='proxy1' type='standalone'>
+            <hardware RAMmin='1024' RAMmax='8192' />
+            <operatingsystem type='WindowsServerEval' />
             <network switch='nat' ip='172.16.1.7' subnet='255.255.255.0' gateway='172.16.1.1' />
         </server>
         -->
         <server name='azad1' type='domain'>
+            <hardware RAMmin='1024' RAMmax='8192' />
+            <operatingsystem type='WindowsServerEval' />
             <network switch='nat' ip='172.16.1.8' subnet='255.255.255.0' gateway='172.16.1.1' />
         </server>
-        <server name='exch1' type='domain'>
+        <server name='exch1' type='domain' role='exchange'>
+            <hardware RAMmin='1024' RAMmax='8192' />
+            <operatingsystem type='WindowsServerEval' />
             <network switch='nat' ip='172.16.1.3' subnet='255.255.255.0' gateway='172.16.1.1' />
         </server>
         <server name='root1' type='standalone' role='root'>
+            <hardware RAMmin='1024' RAMmax='8192' />
+            <operatingsystem type='WindowsServerEval' />
             <network switch='nat' ip='172.16.1.9' subnet='255.255.255.0' gateway='172.16.1.1' />
         </server>
         <server name='aweb1' type='domain' role='iis'>
+            <hardware RAMmin='1024' RAMmax='8192' />
+            <operatingsystem type='WindowsServerEval' />
             <network switch='nat' ip='172.16.1.10' subnet='255.255.255.0' gateway='172.16.1.1' />
         </server>
         <server name='aweb2' type='domain' role='iis'>
+            <hardware RAMmin='1024' RAMmax='8192' />
+            <operatingsystem type='WindowsServerEval' />
             <network switch='nat' ip='172.16.1.11' subnet='255.255.255.0' gateway='172.16.1.1' />
         </server>
-        <!--
-        <server name='admt1' type='domain'>
+        <server name='dhcp1' type='domain' role='dhcp'>
+            <hardware RAMmin='1024' RAMmax='8192' />
+            <operatingsystem type='WindowsServerEval' />
             <network switch='nat' ip='172.16.1.12' subnet='255.255.255.0' gateway='172.16.1.1' />
         </server>
-        -->
+        <server name='klient1' type='domain'>
+            <hardware RAMmin='4096' RAMmax='8192' />
+            <operatingsystem type='WindowsClientEval' />
+            <network switch='nat' ip='172.16.1.13' subnet='255.255.255.0' gateway='172.16.1.1' />
+        </server>
     </servers>
 </infrastructure>

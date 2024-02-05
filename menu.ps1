@@ -8,8 +8,67 @@
 # $ADCredentials = Get-Credential -Message 'Administrator' -UserName 'AD\Administrator'
 
 [xml]$xml = Get-Content -Path '.\testlabguides\testlabguides.xml'
-$ISOPath = 'C:\ISO\en-us_windows_server_2022_updated_feb_2023_x64_dvd_76afefb5.iso'
 $VHDPath = 'C:\VHD'
+
+# function to get ISO path
+function GetISOPath {
+    param (
+        $NameAndType
+    )
+    $ServerEvalIso = Get-ChildItem -Path 'C:\ISO' -Filter '*.iso' | Where-Object { $_.Name -match 'Server' } | Where-Object { $_.Name -match 'Eval' } | Select-Object -First 1
+    $ClientEvalIso = Get-ChildItem -Path 'C:\ISO' -Filter '*.iso' | Where-Object { $_.Name -match 'Client' } | Where-Object { $_.Name -match 'Eval' } | Select-Object -First 1
+    $ExchangeCUIso = Get-ChildItem -Path 'C:\ISO' -Filter '*.iso' | Where-Object { $_.Name -match 'Exchange' } | Where-Object { $_.Name -match 'CU' } | Select-Object -First 1
+    
+    switch ($NameAndType) {
+        "WindowsServerEval" { 
+            $ServerEvalIso.FullName
+        }
+        "WindowsClientEval" {
+            $ClientEvalIso.FullName
+        }
+        "ExchangeServer" {
+            $ExchangeCUIso.FullName
+        }
+        Default {
+            $ServerEvalIso.FullName
+        }
+    }
+}
+
+# function to create VM
+function CreateVirtualMachine {
+    param (
+        $XMLServerNode
+    )
+    $VMName = $XMLServerNode.name
+    $VMISOPath = GetISOPath -NameAndType $XMLServerNode.operatingsystem.type
+    $VMSwitch = Get-VMSwitch -Name $XMLServerNode.network.switch
+    if (!$VMSwitch) {
+        Write-Host "VMSwitch $VMSwitch missing, skipping VM" -ForegroundColor Red
+        break
+    }
+    $VMRAMmin = $XMLServerNode.hardware.rammin + "MB"
+    $VMRAMmax = $XMLServerNode.hardware.rammax + "MB"
+
+    $VM = New-VM -Name $VMName.ToUpper() -Generation 2 -SwitchName $VMSwitch.Name -NewVHDPath ($VHDPath + "\" + $VMName.ToLower() + "-c.vhdx") -NewVHDSizeBytes 100GB -BootDevice VHD
+    Set-VM -Name $VM.Name -ProcessorCount 4 -DynamicMemory -MemoryMinimumBytes $VMRAMmin -MemoryMaximumBytes $VMRAMmax -MemoryStartupBytes $VMRAMmin
+    Add-VMDvdDrive -VMName $VM.Name -Path $VMISOPath
+    Set-VMFirmware -VMName $VM.Name -FirstBootDevice (Get-VMDvdDrive -VMName $VM.Name)
+    $HostGuardianService = Get-HgsGuardian -Name UntrustedGuardian
+    $KeyProtector = New-HgsKeyProtector -Owner $HostGuardianService -AllowUntrustedRoot
+    Set-VMKeyProtector -VMName $VM.Name -KeyProtector $KeyProtector.RawData
+    Enable-VMTPM -VMName $VM.Name
+}
+
+# Check if VM is configured (with correct IP)
+function CheckConfiguredVM {
+    param (
+        $XMLServerNode
+    )
+    $IPv4Pattern = '^((?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+    $VM = Get-VM -Name $XMLServerNode.name
+    $VM.NetworkAdapters.ipaddresses | ForEach-Object { if ($_ -match $XMLServerNode.network.ip) { return $true } }
+}
 
 Clear-Host
 Write-Host " "
@@ -32,7 +91,9 @@ while ($showmenu) {
     Write-Host " 2. Configure OS (name, language, network)"
     Write-Host " 3. Install and Configure ADDS"
     Write-Host " 4. Install and Configure ADCS"
-    Write-Host " 5. Configure services, roles and features"
+    Write-Host " 5. Install and Configure Exchange"
+    Write-Host " 6. Install and Configure DHCP"
+    Write-Host " 9. Configure Credentials"
     Write-Host " "
     Write-Host " 0. exit"
     Write-Host " "
@@ -53,23 +114,10 @@ while ($showmenu) {
             foreach ($xmlserver in $xml.infrastructure.servers.server) {
                 $VMexist = $VMs | Where-Object { $_.Name -match ($xmlserver.name) }
                 if ($VMexist) {
-                    Write-Host $xmlserver.name -ForegroundColor Cyan
+                    Write-Host "Virtual machine $($xmlserver.name) exists, skipping" -ForegroundColor Yellow
                 } else {
-                    Write-Host $xmlserver.name -ForegroundColor Green    
-                    $VMName = $xmlserver.name
-                    $VMSwitch = Get-VMSwitch -Name $xmlserver.network.switch
-                    if (!$VMSwitch) {
-                        Write-Host "VMSwitch $VMSwitch does not exist" -ForegroundColor Red
-                        break
-                    }
-                    $VM = New-VM -Name $VMName.ToUpper() -Generation 2 -SwitchName $VMSwitch.Name -NewVHDPath ($VHDPath + "\" + $VMName.ToLower() + "-c.vhdx") -NewVHDSizeBytes 100GB -BootDevice VHD
-                    Set-VM -Name $VM.Name -ProcessorCount 4 -DynamicMemory -MemoryMinimumBytes 1024MB -MemoryMaximumBytes 8192MB
-                    Add-VMDvdDrive -VMName $VM.Name -Path $ISOPath
-                    Set-VMFirmware -VMName $VM.Name -FirstBootDevice (Get-VMDvdDrive -VMName $VM.Name)
-                    $HostGuardianService = Get-HgsGuardian -Name UntrustedGuardian
-                    $KeyProtector = New-HgsKeyProtector -Owner $HostGuardianService -AllowUntrustedRoot
-                    Set-VMKeyProtector -VMName $VM.Name -KeyProtector $KeyProtector.RawData
-                    Enable-VMTPM -VMName $VM.Name
+                    Write-Host "Virtual machine $($xmlserver.name) missing, creating" -ForegroundColor Cyan
+                    CreateVirtualMachine -XMLServerNode $xmlserver
                 }
             }
             Read-Host -Prompt 'Press enter to continue'
@@ -84,7 +132,11 @@ while ($showmenu) {
             foreach ($xmlserver in $xml.infrastructure.servers.server) {
                 $VMready = $VMsRunning | Where-Object { $_.Name -match ($xmlserver.name) }
                 if ($VMready) {
-                    Write-Host $xmlserver.name -ForegroundColor Green
+                    if (CheckConfiguredVM -XMLServerNode $xmlserver) {
+                        Write-Host "Virtual machine $($xmlserver.name) configured, skipping" -ForegroundColor Green
+                        continue
+                    }
+                    Write-Host "Virtual machine $($xmlserver.name) not configured, configuring" -ForegroundColor Yellow
 
                     $SwitchName = $xmlserver.network.switch
                     $IPAddress = $xmlserver.network.ip
@@ -111,7 +163,7 @@ while ($showmenu) {
                         Restart-Computer -Force
                     } -AsJob -Credential $Credentials
                 } else {
-                    Write-Host ($xmlserver.name)"not ready" -ForegroundColor Red
+                    Write-Host "Virtual machine $($xmlserver.name) not ready, skipping" -ForegroundColor Red
                 }
             }
             Read-Host -Prompt 'Press enter to continue'
@@ -122,9 +174,8 @@ while ($showmenu) {
                 Clear-Host
                 Write-Host " ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"
                 Write-Host " 1. Install ADDS"
-                Write-Host " 2. Configure ADDS"
+                Write-Host " 2. Configure ADDS (ikke kjør ale VMer er ferdig)"
                 Write-Host " 3. Add Virtual Machines to domain"
-                Write-Host " 4. Install LAPS on ADDS"
                 Write-Host " "
                 Write-Host " 0. exit"
                 Write-Host " ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"
@@ -240,6 +291,7 @@ while ($showmenu) {
                     }
                     3 {
                         Clear-Host
+                        $VMsRunning = Get-VM | Where-Object { $_.State -eq 'Running' }
                         $ADCredentials = Get-Credential -Message 'AD Administrator' -UserName 'AD\Administrator'
                         foreach ($xmlserver in $xml.infrastructure.servers.server) {
                             $VMready = $VMsRunning | Where-Object { $_.Name -match ($xmlserver.name) }
@@ -249,6 +301,7 @@ while ($showmenu) {
                                 if ($xmlserver.type -eq 'domain') {
                                     $DomainName = $xml.infrastructure.domain.name
                                     $Computername = $xmlserver.name
+                                    $SwitchName = $xmlserver.network.switch
                                     $VMNetworkAdapter = Get-VM -Name $xmlserver.name | Get-VMNetworkAdapter | Where-Object { $_.SwitchName -eq $SwitchName }
                                     $MacAddress = ($VMNetworkAdapter.MacAddress).ToString()
                                     $xmlserveradds = $xml.infrastructure.servers.server | Where-Object { $_.role -eq 'adds' }
@@ -261,31 +314,6 @@ while ($showmenu) {
                                             Add-Computer -DomainName $Using:DomainName -Credential $Using:ADCredentials -Restart -Force
                                         }
                                     } -AsJob -Credential $Credentials
-                                }
-                            } else {
-                                Write-Host ($xmlserver.name)"not ready" -ForegroundColor Red
-                            }
-                        }
-                        Read-Host -Prompt 'Press enter to continue'
-                    }
-                    4 {
-                        Clear-Host
-                        foreach ($xmlserver in $xml.infrastructure.servers.server) {
-                            $VMready = $VMsRunning | Where-Object { $_.Name -match ($xmlserver.name) }
-                            if ($VMready) {
-                                Write-Host $xmlserver.name -ForegroundColor Green
-
-                                if ($xmlserver.role -eq 'adds') {
-                                    $Session = New-PSSession -VMName $xmlserver.name -Credential $ADCredentials
-                                    Copy-Item -Path '.\testlabguides\Programs\LAPS.x64.msi' -Destination 'C:\' -ToSession $Session
-                                    Invoke-Command -VMName $xmlserver.name -ScriptBlock {
-                                        New-Item -Path 'C:\TEMP' -ItemType Directory -ErrorAction SilentlyContinue
-                                        Move-Item -Path 'C:\LAPS.x64.msi' -Destination 'C:\TEMP\LAPS.x64.msi' -Force
-                                        msiexec /q /i 'C:\TEMP\LAPS.x64.msi' ADDLOCAL=Management.UI,Management.PS,Management.ADMX
-
-                                        Import-module AdmPwd.PS
-                                        Update-AdmPwdADSchema
-                                    } -AsJob -Credential $ADCredentials
                                 }
                             } else {
                                 Write-Host ($xmlserver.name)"not ready" -ForegroundColor Red
@@ -309,7 +337,7 @@ while ($showmenu) {
                 Write-Host " 1. Install IIS"
                 Write-Host " 2. Install ROOT"
                 Write-Host " 3. Distribute CRT and CRL"
-                Write-Host " 4. Install ADCS"
+                Write-Host " 4. Install ADCS (manuelle steg)"
                 Write-Host " "
                 Write-Host " 0. exit"
                 Write-Host " ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"
@@ -357,7 +385,7 @@ while ($showmenu) {
                                         Restart-Service CertSvc
 
                                         Add-CACrlDistributionPoint -Uri 'C:\Windows\System32\CertSrv\CertEnroll\%3%8.crl' -PublishToServer -Force
-                                        Add-CACrlDistributionPoint -Uri 'http://pki.endreawik.no/%3%8.crl' -AddToCertificateCdp -Force
+                                        Add-CACrlDistributionPoint -Uri 'http://pki.ad.endreawik.no/%3%8.crl' -AddToCertificateCdp -Force
 
                                         Get-CAAuthorityInformationAccess | Where-Object { $_.Uri -like '*ldap*' -or $_.Uri -like '*http*' -or $_.Uri -like '*file*' } | Remove-CAAuthorityInformationAccess -Force
 
@@ -379,44 +407,35 @@ while ($showmenu) {
                     }
                     3 { # ADCS distribute
                         $VMsRunning = Get-VM | Where-Object { $_.State -eq 'Running' }
+                        $Certificate = 'Endre A Wik Root CA'
+                        $xml.infrastructure.servers.server | Where-Object { $_.role -eq 'root' } | ForEach-Object {
+                            $Credentials = Get-Credential -Message "Local Administrator"
+                            $Session = New-PSSession -VMName $_.name -Credential $Credentials
+                            Copy-Item -Path "C:\Windows\System32\CertSrv\CertEnroll\$Certificate.crl" -Destination 'C:\TEMP' -FromSession $Session -Force
+                            Copy-Item -Path "C:\Windows\System32\CertSrv\CertEnroll\$Certificate.crt" -Destination 'C:\TEMP' -FromSession $Session -Force
+                            Remove-PSSession -Session $Session
+                        }
+                        $xml.infrastructure.servers.server | Where-Object { $_.role -eq 'iis' } | ForEach-Object {
+                            $Credentials = Get-Credential -Message "Local Administrator"
+                            $Session = New-PSSession -VMName $_.name -Credential $Credentials
+                            Copy-Item -Path "C:\TEMP\$Certificate.crl" -Destination 'C:\inetpub\wwwroot' -ToSession $Session -Force
+                            Copy-Item -Path "C:\TEMP\$Certificate.crt" -Destination 'C:\inetpub\wwwroot' -ToSession $Session -Force
+                            Remove-PSSession -Session $Session
+                        }
+                        $xml.infrastructure.servers.server | Where-Object { $_.role -eq 'adds' } | ForEach-Object {
+                            $ADCredentials = Get-Credential -Message "Domain Administrator"
+                            $Session = New-PSSession -VMName $_.name -Credential $ADCredentials
+                            Copy-Item -Path "C:\TEMP\$Certificate.crt" -Destination 'C:\' -ToSession $Session -Force
 
-                        foreach ($xmlserver in $xml.infrastructure.servers.server) {
-                            $VMready = $VMsRunning | Where-Object { $_.Name -match ($xmlserver.name) }
-                            if ($VMready) {
-                                $Certificate = 'Endre A Wik Root CA'
-                                if ($xmlserver.role -eq 'root') {
-                                    $Credentials = Get-Credential -Message "Local Administrator"
-                                    $Session = New-PSSession -VMName $xmlserver.name -Credential $Credentials
-                                    Copy-Item -Path "C:\Windows\System32\CertSrv\CertEnroll\$Certificate.crl" -Destination 'C:\TEMP' -FromSession $Session -Force
-                                    Copy-Item -Path "C:\Windows\System32\CertSrv\CertEnroll\$Certificate.crt" -Destination 'C:\TEMP' -FromSession $Session -Force
-                                    Remove-PSSession -Session $Session
-                                }
-                                if ($xmlserver.role -eq 'iis') {
-                                    $Credentials = Get-Credential -Message "Local Administrator"
-                                    $Session = New-PSSession -VMName $xmlserver.name -Credential $Credentials
-                                    Copy-Item -Path "C:\TEMP\$Certificate.crl" -Destination 'C:\inetpub\wwwroot' -ToSession $Session -Force
-                                    Copy-Item -Path "C:\TEMP\$Certificate.crt" -Destination 'C:\inetpub\wwwroot' -ToSession $Session -Force
-                                    Remove-PSSession -Session $Session
-                                }
-                                if ($xmlserver.role -eq 'adds') {
-                                    $ADCredentials = Get-Credential -Message "Domain Administrator"
-                                    $Session = New-PSSession -VMName $xmlserver.name -Credential $ADCredentials
-                                    Copy-Item -Path "C:\TEMP\$Certificate.crt" -Destination 'C:\' -ToSession $Session -Force
-                                    Remove-PSSession -Session $Session
+                            Start-Sleep -Seconds 10
+                            Invoke-Command -VMName $_.name -ScriptBlock {
+                                certutil.exe -dsPublish -f "C:\$Using:Certificate.crt" RootCA
+                                Start-Sleep -Seconds 10
+                                Remove-Item -Path "C:\$Using:Certificate.crt" -Force
 
-                                    Start-Sleep -Seconds 10
-
-                                    Invoke-Command -VMName $xmlserver.name -ScriptBlock {
-                                        certutil.exe -dsPublish -f "C:\$Using:Certificate.crt" RootCA
-                                        Start-Sleep -Seconds 10
-                                        Remove-Item -Path "C:\$Using:Certificate.crt" -Force
-
-                                        Add-DnsServerResourceRecord -A -ZoneName 'ad.endreawik.com' -IPv4Address 172.16.1.10 -Name 'pki'
-                                        
-                                    } -AsJob -Credential $ADCredentials
-                                }
-                            } else {
-                            }
+                                Add-DnsServerResourceRecord -A -Name 'pki' -ZoneName 'ad.endreawik.no' -IPv4Address 172.16.1.10
+                            } -AsJob -Credential $ADCredentials
+                            Remove-PSSession -Session $Session
                         }
                         Read-Host -Prompt 'Press enter to continue'
                     }
@@ -432,14 +451,21 @@ while ($showmenu) {
 
                                     Invoke-Command -VMName $xmlserver.name -ScriptBlock {
                                         Install-WindowsFeature -Name ADCS-Cert-Authority -IncludeManagementTools
-                                        Install-AdcsCertificationAuthority -CAType EnterpriseSubordinateCA -CACommonName 'Endre A Wik Enterprise CA' -KeyLength 384 -HashAlgorithmName SHA256 -CryptoProviderName 'ECDSA_P384#Microsoft Software Key Storage Provider' -ValidityPeriod Years -ValidityPeriodUnits 10 -Force -OutputCertRequestFile 'C:\EnterpriseCA.req'
+                                        Install-AdcsCertificationAuthority -CAType EnterpriseSubordinateCA -CACommonName 'Endre A Wik Enterprise CA' -KeyLength 384 -HashAlgorithmName SHA256 -CryptoProviderName 'ECDSA_P384#Microsoft Software Key Storage Provider' -Force -OutputCertRequestFile 'C:\EnterpriseCA.req'
                                     } -Credential $ADCredentials
 
                                     Copy-Item -Path "C:\EnterpriseCA.req" -Destination 'C:\TEMP' -FromSession $Session -Force
 
-                                    $SessionROOT = New-PSSession -VMName 'ROOT1' -Credential $Credentials
+                                    $SessionROOT = New-PSSession -VMName 'ROOT1' -Credential (Get-Credentials -Message 'Local Administrator')
 
                                     Copy-Item -Path "C:\TEMP\EnterpriseCA.req" -Destination 'C:\' -ToSession $SessionROOT -Force
+                                    Write-Host "Submit C:\EnterpriseCA.req to ROOT1"
+                                    read-host -Prompt 'Press enter to continue'
+                                    Copy-Item -Path "C:\EnterpriseCA.cer" -Destination 'C:\TEMP' -FromSession $SessionROOT -Force
+                                    Copy-Item -Path "C:\TEMP\EnterpriseCA.cer" -Destination 'C:\EnterpriseCA.cer' -ToSession $Session -Force
+
+                                    write-host "Add cert to CA, gpupdate and start ca"
+                                    read-host -Prompt 'Press enter to continue'
 
                                     Invoke-Command -VMName $xmlserver.name -ScriptBlock {
                                         <# 
@@ -447,7 +473,7 @@ while ($showmenu) {
                                         Install-WindowsFeature -Name ADCS-Cert-Authority -IncludeManagementTools
                                         Install-AdcsCertificationAuthority -CAType EnterpriseSubordinateCA -CACommonName 'Endre A Wik Enterprise CA' -KeyLength 384 -HashAlgorithmName SHA256 -CryptoProviderName 'ECDSA_P384#Microsoft Software Key Storage Provider' -ValidityPeriod Years -ValidityPeriodUnits 10 -Force -OutputCertRequestFile 'C:\EnterpriseCA.req'
                                         #>
-
+                                        Restart-Service CertSvc
                                         $CRLs = Get-CACrlDistributionPoint
                                         foreach ($CRL in $CRLs) {
                                             Remove-CACrlDistributionPoint -Uri $CRL.Uri -Force
@@ -456,7 +482,7 @@ while ($showmenu) {
                                         Restart-Service CertSvc
                                         
                                         Add-CACrlDistributionPoint -Uri 'C:\Windows\System32\CertSrv\CertEnroll\%3%8.crl' -PublishToServer -Force
-                                        Add-CACrlDistributionPoint -Uri 'http://pki.endreawik.no/%3%8.crl' -AddToCertificateCdp -Force
+                                        Add-CACrlDistributionPoint -Uri 'http://pki.ad.endreawik.no/%3%8.crl' -AddToCertificateCdp -Force
                                         
                                         Get-CAAuthorityInformationAccess | Where-Object { $_.Uri -like '*ldap*' -or $_.Uri -like '*http*' -or $_.Uri -like '*file*' } | Remove-CAAuthorityInformationAccess -Force
                                         
@@ -472,117 +498,143 @@ while ($showmenu) {
                 }
             }
         }
-        5 {
-            Clear-Host
-            Write-Host " ----- ----- ----- ----- -----"
-            Write-Host " Configuring Virtual Machines "
-            Write-Host " ----- ----- ----- ----- -----"
-            $VMsRunning = Get-VM | Where-Object { $_.State -eq 'Running' }
+        5 { # Exchange
+            $showsubmenuexch = $true
+            while ($showsubmenuexch) {
+                Clear-Host
+                Write-Host " ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"
+                Write-Host " 1. Prepare Schema and AD"
+                Write-Host " 2. Install Exchange ManagementTools"
+                Write-Host " 3. Config Exchange Management Shell without server"
+                Write-Host " "
+                Write-Host " 0. exit"
+                Write-Host " ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"
+            
+                $UserInput_SubMenu = Read-Host -Prompt 'Menu option'
 
-            foreach ($xmlserver in $xml.infrastructure.servers.server) {
-                $VMready = $VMsRunning | Where-Object { $_.Name -match ($xmlserver.name) }
-                if ($VMready) {
-                    Write-Host $xmlserver.name -ForegroundColor Green
+                switch ($UserInput_SubMenu) {
+                    0 {
+                        $showsubmenuexch = $false
+                    }
+                    1 {
+                        $xml.infrastructure.servers.server | Where-Object { $_.role -eq 'exchange' } | ForEach-Object {
+                            $VM = Get-VM -Name $_.name
+                            $VMISOPath = GetISOPath -NameAndType "ExchangeServer"
+                            Set-VMDvdDrive -VMName $VM.Name -Path $VMISOPath
+                            Write-Host $_.name -ForegroundColor Green
+                            $OrganizationName = $xml.infrastructure.organization.name
+                            $Job = Invoke-Command -VMName $_.name -ScriptBlock {
+                                Add-WindowsFeature RSAT-ADDS
+                                D:\setup.exe /IAcceptExchangeServerLicenseTerms_DiagnosticDataOFF /PrepareSchema
+                                $OrganizationName = $Using:OrganizationName
+                                D:\setup.exe /IAcceptExchangeServerLicenseTerms_DiagnosticDataOFF /PrepareAD /OrganizationName:"$OrganizationName" /ActiveDirectorySplitPermissions:true
+                            } -AsJob -Credential $ADCredentials
+                            Write-Host "Waiting for job to complete, ca 10 min" -ForegroundColor Yellow
+                            Wait-Job -Job $Job
 
-                } else {
-                    Write-Host ($xmlserver.name)"not ready" -ForegroundColor Red
+                        }
+                    }
+                    2 {
+                        $xml.infrastructure.servers.server | Where-Object { $_.role -eq 'exchange' } | ForEach-Object {
+                            Write-Host $_.name -ForegroundColor Green
+                            $OrganizationName = $xml.infrastructure.organization.name
+                            $Job = Invoke-Command -VMName $_.name -ScriptBlock {
+                                New-Item -Path C:\ -Name TEMP -ItemType Directory
+                                Invoke-WebRequest -Uri 'https://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x64.exe' -OutFile 'C:\TEMP\vcredist_x64.exe'
+                                Start-Process -FilePath 'C:\TEMP\vcredist_x64.exe' -ArgumentList '/q /norestart' -Wait
+                            
+                                Enable-WindowsOptionalFeature -Online -FeatureName IIS-IIS6ManagementCompatibility,IIS-Metabase -All
+        
+                                $OrganizationName = $Using:OrganizationName
+                                D:\setup.exe /IAcceptExchangeServerLicenseTerms_DiagnosticDataOFF /OrganizationName:"$OrganizationName" /Mode:Install /Roles:ManagementTools
+                            } -AsJob -Credential $ADCredentials
+                            Write-Host "Waiting for job to complete, ca 10 min" -ForegroundColor Yellow
+                            Wait-Job -Job $Job
+                        }
+                    }
+                    3 {
+                        $xml.infrastructure.servers.server | Where-Object { $_.role -eq 'exchange' } | ForEach-Object {
+                            Write-Host $_.name -ForegroundColor Green
+                            $Job = Invoke-Command -VMName $_.name -ScriptBlock {
+                                Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn
+                                Add-PSSnapin *RecipientManagement
+                                . "C:\Program Files\Microsoft\Exchange Server\V15\Scripts\Add-PermissionForEMT.ps1"
+                            } -AsJob -Credential $ADCredentials
+                            Wait-Job -Job $Job
+                        }
+                    }
                 }
             }
-            Read-Host -Prompt 'Press enter to continue'
-            <#
-            $VMName = Read-Host -Prompt 'VMName'
-            # Install Roles and Features
-            # install ADDS using powershell remoting as job
-            $DomainName = $xml.infrastructure.domain.name
-            $NetBIOSName = $xml.infrastructure.domain.netbios
+        }
+        6 { # DHCP
+            $showsubmenudhcp = $true
+            while ($showsubmenudhcp) {
+                Clear-Host
+                Write-Host " ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"
+                Write-Host " 1. Install DHCP"
+                Write-Host " "
+                Write-Host " 0. exit"
+                Write-Host " ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"
+            
+                $UserInput_SubMenu = Read-Host -Prompt 'Menu option'
 
-            # install additional ADDS using powershell remoting as job
-            $DomainName = $xml.infrastructure.domain.name
-            $NetBIOSName = $xml.infrastructure.domain.netbios
-            $Computername = 'adds2'
-            Invoke-Command -VMName $VMName -ScriptBlock {
-                if ($env:COMPUTERNAME -eq $Using:Computername) {
-                    Add-WindowsFeature AD-Domain-Services -IncludeManagementTools
+                switch ($UserInput_SubMenu) {
+                    1 {
+                        $xml.infrastructure.servers.server | Where-Object { $_.role -eq 'dhcp' } | ForEach-Object {
+                            Write-Host $_.name -ForegroundColor Green
+                            $Job = Invoke-Command -VMName $_.name -ScriptBlock {
+                                Install-WindowsFeature -Name DHCP -IncludeManagementTools
+                                Add-DhcpServerv4Scope -name "NAT" -StartRange 172.16.1.100 -EndRange 172.16.1.200 -SubnetMask 255.255.255.0
+                                Set-DhcpServerv4OptionValue -DnsDomain ad.endreawik.no -DnsServer 172.16.1.2
+                                Add-DhcpServerInDC -DnsName dhcp1.ad.endreawik.no -IPAddress 172.16.1.12
+                            } -AsJob -Credential (Get-Credential -Message 'AD Administrator' -UserName 'AD\Administrator')
 
-                    # A-DC-Spooler
-                    Get-Service -Name Spooler | Stop-Service
-                    Get-Service -Name Spooler | Set-Service -StartupType Disabled
-
-                    Import-Module ADDSDeployment
-                    Install-ADDSDomainController `
-                    -CreateDnsDelegation:$false `
-                    -DatabasePath "C:\ADDS\NTDS" `
-                    -DomainName $Using:DomainName `
-                    -InstallDns:$true `
-                    -LogPath "C:\ADDS\NTDS" `
-                    -NoRebootOnCompletion:$false `
-                    -SysvolPath "C:\ADDS\SYSVOL" `
-                    -SafeModeAdministratorPassword (ConvertTo-SecureString -String (New-Guid).ToString() -AsPlainText -Force) `
-                    -Force:$true
+                            Wait-Job -Job $Job
+                        }
+                    Read-Host -Prompt 'Press enter to continue'
+                    }
+                    0 {
+                        $showsubmenudhcp = $false
+                    }
+                    default { }
                 }
-            } -AsJob -Credential $ADCredentials
+            }
+        }
+        7 {
+            $showsubmenuhybrid = $true
+            while ($showsubmenuhybrid) {
+                Clear-Host
+                Write-Host " ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"
+                Write-Host " 1. Download Azure AD Connect"
+                Write-Host " "
+                Write-Host " 0. exit"
+                Write-Host " ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"
+            
+                $UserInput_SubMenu = Read-Host -Prompt 'Menu option'
 
-            # install exchange part 1 using powershell remoting as job
-            $Computername = 'exch1'
-            $VMName = $Computername
-            Invoke-Command -VMName $VMName -ScriptBlock {
-                if ($env:COMPUTERNAME -eq $Using:Computername) {
-                    Add-WindowsFeature RSAT-ADDS
-
-                    D:\setup.exe /IAcceptExchangeServerLicenseTerms_DiagnosticDataOFF /PrepareSchema
-
-                    Restart-Computer
+                switch ($UserInput_SubMenu) {
+                    0 {
+                        $showsubmenuhybrid = $false
+                    }
+                    1 {
+                        $Job = Invoke-Command -VMName $_.name -ScriptBlock {
+                            New-Item -Path C:\ -Name TEMP -ItemType Directory
+                            Invoke-WebRequest -Uri 'https://download.microsoft.com/download/B/0/0/B00291D0-5A83-4DE7-86F5-980BC00DE05A/AzureADConnect.msi' -OutFile 'C:\TEMP\AzureADConnect.msi'
+                        } -AsJob -Credential $Credentials
+                    }
                 }
-            } -AsJob -Credential $ADCredentials
-
-            Start-Sleep -Seconds 60
-
-            # install exchange part 2 using powershell remoting as job
-            $Computername = 'exch1'
-            Invoke-Command -VMName $VMName -ScriptBlock {
-                if ($env:COMPUTERNAME -eq $Using:Computername) {
-                    $OrganizationName = "Endre A Wik"
-                    D:\setup.exe /IAcceptExchangeServerLicenseTerms_DiagnosticDataOFF /PrepareAD /OrganizationName:"$OrganizationName" /ActiveDirectorySplitPermissions:true
-
-                    Restart-Computer
-                }
-            } -AsJob -Credential $ADCredentials
-
-            Start-Sleep -Seconds 60
-
-            # install exchange part 3 using powershell remoting as job
-            $Computername = 'exch1'
-            Invoke-Command -VMName $VMName -ScriptBlock {
-                if ($env:COMPUTERNAME -eq $Using:Computername) {
-                    $OrganizationName = "Endre A Wik"
-                    D:\setup.exe /IAcceptExchangeServerLicenseTerms_DiagnosticDataOFF /OrganizationName:"$OrganizationName" /ActiveDirectorySplitPermissions:true /Mode:Install /Roles:ManagementTools
-
-                    Restart-Computer
-                }
-            } -AsJob -Credential $ADCredentials
-            #>
+            }
+        }
+        9 { # Credentials
+            $Credentials = Get-Credential -Message "Local Administrator"
+            $ADCredentials = Get-Credential -Message "Domain Administrator"
         }
     }
 }
 
 
+<# 
+    $IPv4Pattern = '^((?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+    (Get-VM -Name root1).NetworkAdapters.ipaddresses | ForEach-Object { if ($_ -match $IPv4Pattern) { $_ } }
+#>
 
-$PersonalAccessToken = "dare5bmchzcr6wb2xpwl3hroc6wttow6zjldiiyaf4ueubpcm7ra"
-$PersonalAccessToken = "46ugsp535ayumxhau5b254gdxxkbwdhbhzqcwmpeeqbuckuizo7a"
-$Organization = "pcmannen"
-$CreateProjectsManager = @{Authorization = 'Basic ' + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$($PersonalAccessToken)")) }
-
-$RequestBody = @{
-    name = "Projectname"
-    description = "Project description"
-    capabilities = @{
-        versioncontrol = @{
-            sourceControlType = "Git"
-        }
-        processTemplate = @{
-            templateTypeId = "b8a3a935-7e91-48b8-a94c-606d37c3e9f2"
-        }
-    }
-}
-
-Invoke-RestMethod -Headers $CreateProjectsManager -Method Post -Uri "https://dev.azure.com/$($Organization)/_apis/projects?api-version=7.1-preview.4" -Body ($RequestBody | ConvertTo-Json -Depth 5) -ContentType "application/json"
